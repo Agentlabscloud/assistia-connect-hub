@@ -43,8 +43,8 @@ function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[color:var(--brand-ivory)] p-4">
       <div className="w-full max-w-md">
-        <div className="flex justify-center mb-6">
-          <Logo />
+        <div className="flex justify-center mb-8">
+          <Logo className="h-20 w-auto" />
         </div>
         <div className="bg-white rounded-xl shadow-sm border p-6">
           <h1 className="text-xl font-semibold">Crear cuenta</h1>
