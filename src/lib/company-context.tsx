@@ -42,7 +42,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       const { data } = await supabase
         .from("profiles")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("id", user.id)
         .maybeSingle();
       if (data) {
         prof = data as Profile;
