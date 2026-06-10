@@ -1,9 +1,8 @@
 export interface Profile {
   id: string;
-  user_id: string;
   company_id: string;
-  email?: string | null;
   full_name?: string | null;
+  role?: string | null;
 }
 
 export interface Company {
