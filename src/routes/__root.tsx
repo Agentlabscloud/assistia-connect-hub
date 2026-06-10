@@ -11,6 +11,7 @@ import { Toaster } from "@/components/ui/sonner";
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/lib/auth-context";
 import { CompanyProvider } from "@/lib/company-context";
+import faviconAsset from "@/assets/agentlabs-cloud-icon.png.asset.json";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
