@@ -1,39 +1,19 @@
 import { cn } from "@/lib/utils";
+import logoFull from "@/assets/agentlabs-cloud-logo.png.asset.json";
+import logoIcon from "@/assets/agentlabs-cloud-icon.png.asset.json";
 
 interface LogoProps {
   className?: string;
-  variant?: "light" | "dark";
-  textOnly?: boolean;
+  variant?: "full" | "icon";
 }
 
-/**
- * AgentLabs Cloud logo.
- * Drop the official PNG at src/assets/agentlabs-cloud-logo.png and
- * uncomment the import to use it. Falls back to wordmark text.
- */
-// import logoUrl from "@/assets/agentlabs-cloud-logo.png";
-const logoUrl: string | undefined = undefined;
-
-export function Logo({ className, variant = "dark", textOnly = false }: LogoProps) {
-  if (logoUrl && !textOnly) {
-    return (
-      <img
-        src={logoUrl}
-        alt="AgentLabs Cloud"
-        className={cn("h-8 w-auto", className)}
-      />
-    );
-  }
-
+export function Logo({ className, variant = "full" }: LogoProps) {
+  const src = variant === "icon" ? logoIcon.url : logoFull.url;
   return (
-    <span
-      className={cn(
-        "font-bold tracking-tight text-lg",
-        variant === "light" ? "text-white" : "text-[color:var(--brand-blue)]",
-        className,
-      )}
-    >
-      AgentLabs <span className="font-semibold opacity-80">Cloud</span>
-    </span>
+    <img
+      src={src}
+      alt="AgentLabs Cloud"
+      className={cn(variant === "icon" ? "h-9 w-9" : "h-9 w-auto", className)}
+    />
   );
 }
