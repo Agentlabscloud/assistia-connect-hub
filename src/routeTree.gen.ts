@@ -11,7 +11,17 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppWhatsappRouteImport } from './routes/_app.whatsapp'
+import { Route as AppUsageRouteImport } from './routes/_app.usage'
+import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
+import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppConversationsRouteImport } from './routes/_app.conversations'
+import { Route as AppClientsRouteImport } from './routes/_app.clients'
+import { Route as AppBillingRouteImport } from './routes/_app.billing'
+import { Route as AppAssistantRouteImport } from './routes/_app.assistant'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -23,38 +33,154 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppWhatsappRoute = AppWhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppUsageRoute = AppUsageRouteImport.update({
+  id: '/usage',
+  path: '/usage',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotificationsRoute = AppNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConversationsRoute = AppConversationsRouteImport.update({
+  id: '/conversations',
+  path: '/conversations',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppClientsRoute = AppClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBillingRoute = AppBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAssistantRoute = AppAssistantRouteImport.update({
+  id: '/assistant',
+  path: '/assistant',
+  getParentRoute: () => AppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/assistant': typeof AppAssistantRoute
+  '/billing': typeof AppBillingRoute
+  '/clients': typeof AppClientsRoute
+  '/conversations': typeof AppConversationsRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/notifications': typeof AppNotificationsRoute
+  '/settings': typeof AppSettingsRoute
+  '/usage': typeof AppUsageRoute
+  '/whatsapp': typeof AppWhatsappRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/assistant': typeof AppAssistantRoute
+  '/billing': typeof AppBillingRoute
+  '/clients': typeof AppClientsRoute
+  '/conversations': typeof AppConversationsRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/notifications': typeof AppNotificationsRoute
+  '/settings': typeof AppSettingsRoute
+  '/usage': typeof AppUsageRoute
+  '/whatsapp': typeof AppWhatsappRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/_app/assistant': typeof AppAssistantRoute
+  '/_app/billing': typeof AppBillingRoute
+  '/_app/clients': typeof AppClientsRoute
+  '/_app/conversations': typeof AppConversationsRoute
+  '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/notifications': typeof AppNotificationsRoute
+  '/_app/settings': typeof AppSettingsRoute
+  '/_app/usage': typeof AppUsageRoute
+  '/_app/whatsapp': typeof AppWhatsappRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/register'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/assistant'
+    | '/billing'
+    | '/clients'
+    | '/conversations'
+    | '/dashboard'
+    | '/notifications'
+    | '/settings'
+    | '/usage'
+    | '/whatsapp'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/register'
-  id: '__root__' | '/' | '/login' | '/register'
+  to:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/assistant'
+    | '/billing'
+    | '/clients'
+    | '/conversations'
+    | '/dashboard'
+    | '/notifications'
+    | '/settings'
+    | '/usage'
+    | '/whatsapp'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/login'
+    | '/register'
+    | '/_app/assistant'
+    | '/_app/billing'
+    | '/_app/clients'
+    | '/_app/conversations'
+    | '/_app/dashboard'
+    | '/_app/notifications'
+    | '/_app/settings'
+    | '/_app/usage'
+    | '/_app/whatsapp'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
 }
@@ -75,6 +201,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -82,14 +215,114 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/whatsapp': {
+      id: '/_app/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/whatsapp'
+      preLoaderRoute: typeof AppWhatsappRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/usage': {
+      id: '/_app/usage'
+      path: '/usage'
+      fullPath: '/usage'
+      preLoaderRoute: typeof AppUsageRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/notifications': {
+      id: '/_app/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AppNotificationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/conversations': {
+      id: '/_app/conversations'
+      path: '/conversations'
+      fullPath: '/conversations'
+      preLoaderRoute: typeof AppConversationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/clients': {
+      id: '/_app/clients'
+      path: '/clients'
+      fullPath: '/clients'
+      preLoaderRoute: typeof AppClientsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/billing': {
+      id: '/_app/billing'
+      path: '/billing'
+      fullPath: '/billing'
+      preLoaderRoute: typeof AppBillingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/assistant': {
+      id: '/_app/assistant'
+      path: '/assistant'
+      fullPath: '/assistant'
+      preLoaderRoute: typeof AppAssistantRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppAssistantRoute: typeof AppAssistantRoute
+  AppBillingRoute: typeof AppBillingRoute
+  AppClientsRoute: typeof AppClientsRoute
+  AppConversationsRoute: typeof AppConversationsRoute
+  AppDashboardRoute: typeof AppDashboardRoute
+  AppNotificationsRoute: typeof AppNotificationsRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppUsageRoute: typeof AppUsageRoute
+  AppWhatsappRoute: typeof AppWhatsappRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAssistantRoute: AppAssistantRoute,
+  AppBillingRoute: AppBillingRoute,
+  AppClientsRoute: AppClientsRoute,
+  AppConversationsRoute: AppConversationsRoute,
+  AppDashboardRoute: AppDashboardRoute,
+  AppNotificationsRoute: AppNotificationsRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppUsageRoute: AppUsageRoute,
+  AppWhatsappRoute: AppWhatsappRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
