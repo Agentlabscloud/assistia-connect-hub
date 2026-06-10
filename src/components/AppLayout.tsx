@@ -47,7 +47,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const SidebarInner = (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       <div className="flex items-center justify-between px-6 py-5">
-        <Logo variant="light" />
+        <Logo variant="full" className="h-8 brightness-0 invert" />
         <button
           className="lg:hidden text-sidebar-foreground"
           onClick={() => setOpen(false)}
