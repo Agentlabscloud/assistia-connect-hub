@@ -1,4 +1,5 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   Bot,
@@ -39,9 +40,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
+  const qc = useQueryClient();
+
   const handleSignOut = async () => {
+    await qc.cancelQueries();
+    qc.clear();
     await signOut();
-    navigate({ to: "/login" });
+    navigate({ to: "/login", replace: true });
   };
 
   const SidebarInner = (
