@@ -3,106 +3,100 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useCompany } from "@/lib/company-context";
 import { PageHeader, LoadingState, EmptyState, StatCard, ProgressBar } from "@/components/ui-bits";
-import type { UsageCounter } from "@/lib/types";
-import { AlertTriangle } from "lucide-react";
+import type { UsageCounter, Subscription } from "@/lib/types";
+import { DEFAULT_MESSAGE_LIMIT } from "@/lib/types";
+import { UsageAlert } from "@/routes/_app.dashboard";
 
 export const Route = createFileRoute("/_app/uso-mensual")({
   component: UsagePage,
 });
 
+function currentMonth() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
 function UsagePage() {
   const { companyId } = useCompany();
 
-  const { data, isLoading } = useQuery({
+  const usageQ = useQuery({
     queryKey: ["usage-current", companyId],
     enabled: !!companyId,
     queryFn: async () => {
-      const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const end = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString();
-      const { data } = await supabase
+      const month = currentMonth();
+      const { data: cur } = await supabase
         .from("usage_counters")
-        .select("*")
+        .select("id,company_id,period_month,messages_used,messages_limit")
         .eq("company_id", companyId)
-        .gte("period_start", start)
-        .lt("period_start", end)
+        .eq("period_month", month)
         .maybeSingle();
-      if (data) return data as UsageCounter;
-      // fallback: latest
+      if (cur) return cur as UsageCounter;
       const { data: latest } = await supabase
         .from("usage_counters")
-        .select("*")
+        .select("id,company_id,period_month,messages_used,messages_limit")
         .eq("company_id", companyId)
-        .order("period_start", { ascending: false })
+        .order("period_month", { ascending: false })
         .limit(1);
       return (latest?.[0] as UsageCounter) ?? null;
     },
   });
 
-  if (isLoading) return <LoadingState />;
+  const subQ = useQuery({
+    queryKey: ["sub", companyId],
+    enabled: !!companyId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("subscriptions")
+        .select("id,company_id,included_messages")
+        .eq("company_id", companyId)
+        .maybeSingle();
+      return (data as Subscription) ?? null;
+    },
+  });
 
-  if (!data) {
+  if (usageQ.isLoading) return <LoadingState />;
+
+  const usage = usageQ.data;
+  const msgUsed = usage?.messages_used ?? 0;
+  const msgLimit = usage?.messages_limit && usage.messages_limit > 0
+    ? usage.messages_limit
+    : subQ.data?.included_messages && subQ.data.included_messages > 0
+      ? subQ.data.included_messages
+      : DEFAULT_MESSAGE_LIMIT;
+  const pct = msgLimit > 0 ? Math.round((msgUsed / msgLimit) * 100) : 0;
+
+  if (!usage) {
     return (
       <div>
-        <PageHeader title="Uso mensual" subtitle="Consulta el consumo de mensajes y tokens de tu cuenta." />
+        <PageHeader title="Uso mensual" subtitle="Consulta tu consumo de respuestas IA del mes." />
         <EmptyState title="Todavía no hay consumo registrado este mes." />
       </div>
     );
   }
 
-  const msgUsed = data.messages_used ?? 0;
-  const msgLimit = data.messages_limit ?? 0;
-  const tokUsed = data.tokens_used ?? 0;
-  const tokLimit = data.tokens_limit ?? 0;
-  const msgPct = msgLimit > 0 ? (msgUsed / msgLimit) * 100 : 0;
-  const tokPct = tokLimit > 0 ? (tokUsed / tokLimit) * 100 : 0;
-
   return (
     <div>
-      <PageHeader title="Uso mensual" subtitle="Consulta el consumo de mensajes y tokens de tu cuenta." />
+      <PageHeader title="Uso mensual" subtitle="Consulta tu consumo de respuestas IA del mes." />
 
-      {msgPct >= 100 && (
-        <Alert tone="danger" message="Tu cuenta alcanzó el límite mensual de respuestas." />
-      )}
-      {msgPct >= 80 && msgPct < 100 && (
-        <Alert tone="warning" message="Tu cuenta está cerca del límite mensual de respuestas." />
-      )}
-      {tokPct >= 80 && (
-        <Alert tone="warning" message="Tu consumo de tokens supera el 80% del límite." />
-      )}
+      <UsageAlert used={msgUsed} limit={msgLimit} />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
-        <StatCard label="Mensajes usados" value={msgUsed}>
-          <div className="mt-3"><ProgressBar value={msgUsed} max={msgLimit} tone={msgPct >= 100 ? "danger" : msgPct >= 80 ? "warning" : "primary"} /></div>
-          <div className="text-xs text-muted-foreground mt-1">Límite: {msgLimit}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <StatCard label="Respuestas IA usadas" value={`${msgUsed} / ${msgLimit}`}>
+          <div className="mt-3">
+            <ProgressBar value={msgUsed} max={msgLimit} tone={pct >= 100 ? "danger" : pct >= 80 ? "warning" : "primary"} />
+          </div>
+          <div className="text-xs text-muted-foreground mt-2">{pct}% del límite incluido en tu plan.</div>
         </StatCard>
-        <StatCard label="Tokens usados" value={tokUsed}>
-          <div className="mt-3"><ProgressBar value={tokUsed} max={tokLimit} tone={tokPct >= 100 ? "danger" : tokPct >= 80 ? "warning" : "primary"} /></div>
-          <div className="text-xs text-muted-foreground mt-1">Límite: {tokLimit}</div>
+        <StatCard label="Periodo" value={usage.period_month || currentMonth()}>
+          <div className="text-xs text-muted-foreground mt-1">
+            Este contador corresponde al uso incluido en tu plan de AgentLabs Cloud.
+          </div>
         </StatCard>
-        <StatCard label="Costo estimado IA" value={data.estimated_ai_cost != null ? `$${data.estimated_ai_cost}` : "—"} />
-        <StatCard
-          label="Periodo actual"
-          value={
-            data.period_start
-              ? `${new Date(data.period_start).toLocaleDateString("es")} – ${data.period_end ? new Date(data.period_end).toLocaleDateString("es") : ""}`
-              : "—"
-          }
-        />
       </div>
-    </div>
-  );
-}
 
-function Alert({ tone, message }: { tone: "warning" | "danger"; message: string }) {
-  const cls =
-    tone === "danger"
-      ? "bg-[color:var(--destructive)]/10 border-[color:var(--destructive)]/30 text-[color:var(--destructive)]"
-      : "bg-[color:var(--warning)]/20 border-[color:var(--warning)]/40 text-[color:var(--warning-foreground)]";
-  return (
-    <div className={`mb-4 rounded-lg border px-4 py-3 flex items-center gap-2 ${cls}`}>
-      <AlertTriangle className="h-4 w-4" />
-      <span className="text-sm">{message}</span>
+      <div className="mt-4 rounded-lg border bg-white p-4 text-sm text-muted-foreground">
+        Los costos de WhatsApp Cloud API son cobrados directamente por Meta y no están incluidos en este contador.
+      </div>
     </div>
   );
 }

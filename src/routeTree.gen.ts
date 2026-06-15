@@ -14,14 +14,14 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppWhatsappRouteImport } from './routes/_app.whatsapp'
-import { Route as AppUsageRouteImport } from './routes/_app.usage'
-import { Route as AppSettingsRouteImport } from './routes/_app.settings'
-import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
+import { Route as AppUsoMensualRouteImport } from './routes/_app.uso-mensual'
+import { Route as AppNotificacionesRouteImport } from './routes/_app.notificaciones'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
-import { Route as AppConversationsRouteImport } from './routes/_app.conversations'
-import { Route as AppClientsRouteImport } from './routes/_app.clients'
+import { Route as AppConversacionesRouteImport } from './routes/_app.conversaciones'
+import { Route as AppConfiguracionRouteImport } from './routes/_app.configuracion'
+import { Route as AppClientesRouteImport } from './routes/_app.clientes'
 import { Route as AppBillingRouteImport } from './routes/_app.billing'
-import { Route as AppAssistantRouteImport } from './routes/_app.assistant'
+import { Route as AppAssistiaRouteImport } from './routes/_app.assistia'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -47,19 +47,14 @@ const AppWhatsappRoute = AppWhatsappRouteImport.update({
   path: '/whatsapp',
   getParentRoute: () => AppRoute,
 } as any)
-const AppUsageRoute = AppUsageRouteImport.update({
-  id: '/usage',
-  path: '/usage',
+const AppUsoMensualRoute = AppUsoMensualRouteImport.update({
+  id: '/uso-mensual',
+  path: '/uso-mensual',
   getParentRoute: () => AppRoute,
 } as any)
-const AppSettingsRoute = AppSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppNotificationsRoute = AppNotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
+const AppNotificacionesRoute = AppNotificacionesRouteImport.update({
+  id: '/notificaciones',
+  path: '/notificaciones',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
@@ -67,14 +62,19 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
-const AppConversationsRoute = AppConversationsRouteImport.update({
-  id: '/conversations',
-  path: '/conversations',
+const AppConversacionesRoute = AppConversacionesRouteImport.update({
+  id: '/conversaciones',
+  path: '/conversaciones',
   getParentRoute: () => AppRoute,
 } as any)
-const AppClientsRoute = AppClientsRouteImport.update({
-  id: '/clients',
-  path: '/clients',
+const AppConfiguracionRoute = AppConfiguracionRouteImport.update({
+  id: '/configuracion',
+  path: '/configuracion',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppClientesRoute = AppClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
   getParentRoute: () => AppRoute,
 } as any)
 const AppBillingRoute = AppBillingRouteImport.update({
@@ -82,9 +82,9 @@ const AppBillingRoute = AppBillingRouteImport.update({
   path: '/billing',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAssistantRoute = AppAssistantRouteImport.update({
-  id: '/assistant',
-  path: '/assistant',
+const AppAssistiaRoute = AppAssistiaRouteImport.update({
+  id: '/assistia',
+  path: '/assistia',
   getParentRoute: () => AppRoute,
 } as any)
 
@@ -92,28 +92,28 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/assistant': typeof AppAssistantRoute
+  '/assistia': typeof AppAssistiaRoute
   '/billing': typeof AppBillingRoute
-  '/clients': typeof AppClientsRoute
-  '/conversations': typeof AppConversationsRoute
+  '/clientes': typeof AppClientesRoute
+  '/configuracion': typeof AppConfiguracionRoute
+  '/conversaciones': typeof AppConversacionesRoute
   '/dashboard': typeof AppDashboardRoute
-  '/notifications': typeof AppNotificationsRoute
-  '/settings': typeof AppSettingsRoute
-  '/usage': typeof AppUsageRoute
+  '/notificaciones': typeof AppNotificacionesRoute
+  '/uso-mensual': typeof AppUsoMensualRoute
   '/whatsapp': typeof AppWhatsappRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/assistant': typeof AppAssistantRoute
+  '/assistia': typeof AppAssistiaRoute
   '/billing': typeof AppBillingRoute
-  '/clients': typeof AppClientsRoute
-  '/conversations': typeof AppConversationsRoute
+  '/clientes': typeof AppClientesRoute
+  '/configuracion': typeof AppConfiguracionRoute
+  '/conversaciones': typeof AppConversacionesRoute
   '/dashboard': typeof AppDashboardRoute
-  '/notifications': typeof AppNotificationsRoute
-  '/settings': typeof AppSettingsRoute
-  '/usage': typeof AppUsageRoute
+  '/notificaciones': typeof AppNotificacionesRoute
+  '/uso-mensual': typeof AppUsoMensualRoute
   '/whatsapp': typeof AppWhatsappRoute
 }
 export interface FileRoutesById {
@@ -122,14 +122,14 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/_app/assistant': typeof AppAssistantRoute
+  '/_app/assistia': typeof AppAssistiaRoute
   '/_app/billing': typeof AppBillingRoute
-  '/_app/clients': typeof AppClientsRoute
-  '/_app/conversations': typeof AppConversationsRoute
+  '/_app/clientes': typeof AppClientesRoute
+  '/_app/configuracion': typeof AppConfiguracionRoute
+  '/_app/conversaciones': typeof AppConversacionesRoute
   '/_app/dashboard': typeof AppDashboardRoute
-  '/_app/notifications': typeof AppNotificationsRoute
-  '/_app/settings': typeof AppSettingsRoute
-  '/_app/usage': typeof AppUsageRoute
+  '/_app/notificaciones': typeof AppNotificacionesRoute
+  '/_app/uso-mensual': typeof AppUsoMensualRoute
   '/_app/whatsapp': typeof AppWhatsappRoute
 }
 export interface FileRouteTypes {
@@ -138,28 +138,28 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
-    | '/assistant'
+    | '/assistia'
     | '/billing'
-    | '/clients'
-    | '/conversations'
+    | '/clientes'
+    | '/configuracion'
+    | '/conversaciones'
     | '/dashboard'
-    | '/notifications'
-    | '/settings'
-    | '/usage'
+    | '/notificaciones'
+    | '/uso-mensual'
     | '/whatsapp'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
     | '/register'
-    | '/assistant'
+    | '/assistia'
     | '/billing'
-    | '/clients'
-    | '/conversations'
+    | '/clientes'
+    | '/configuracion'
+    | '/conversaciones'
     | '/dashboard'
-    | '/notifications'
-    | '/settings'
-    | '/usage'
+    | '/notificaciones'
+    | '/uso-mensual'
     | '/whatsapp'
   id:
     | '__root__'
@@ -167,14 +167,14 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/register'
-    | '/_app/assistant'
+    | '/_app/assistia'
     | '/_app/billing'
-    | '/_app/clients'
-    | '/_app/conversations'
+    | '/_app/clientes'
+    | '/_app/configuracion'
+    | '/_app/conversaciones'
     | '/_app/dashboard'
-    | '/_app/notifications'
-    | '/_app/settings'
-    | '/_app/usage'
+    | '/_app/notificaciones'
+    | '/_app/uso-mensual'
     | '/_app/whatsapp'
   fileRoutesById: FileRoutesById
 }
@@ -222,25 +222,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWhatsappRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/usage': {
-      id: '/_app/usage'
-      path: '/usage'
-      fullPath: '/usage'
-      preLoaderRoute: typeof AppUsageRouteImport
+    '/_app/uso-mensual': {
+      id: '/_app/uso-mensual'
+      path: '/uso-mensual'
+      fullPath: '/uso-mensual'
+      preLoaderRoute: typeof AppUsoMensualRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/settings': {
-      id: '/_app/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/notifications': {
-      id: '/_app/notifications'
-      path: '/notifications'
-      fullPath: '/notifications'
-      preLoaderRoute: typeof AppNotificationsRouteImport
+    '/_app/notificaciones': {
+      id: '/_app/notificaciones'
+      path: '/notificaciones'
+      fullPath: '/notificaciones'
+      preLoaderRoute: typeof AppNotificacionesRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/dashboard': {
@@ -250,18 +243,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/conversations': {
-      id: '/_app/conversations'
-      path: '/conversations'
-      fullPath: '/conversations'
-      preLoaderRoute: typeof AppConversationsRouteImport
+    '/_app/conversaciones': {
+      id: '/_app/conversaciones'
+      path: '/conversaciones'
+      fullPath: '/conversaciones'
+      preLoaderRoute: typeof AppConversacionesRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/clients': {
-      id: '/_app/clients'
-      path: '/clients'
-      fullPath: '/clients'
-      preLoaderRoute: typeof AppClientsRouteImport
+    '/_app/configuracion': {
+      id: '/_app/configuracion'
+      path: '/configuracion'
+      fullPath: '/configuracion'
+      preLoaderRoute: typeof AppConfiguracionRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/clientes': {
+      id: '/_app/clientes'
+      path: '/clientes'
+      fullPath: '/clientes'
+      preLoaderRoute: typeof AppClientesRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/billing': {
@@ -271,37 +271,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBillingRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/assistant': {
-      id: '/_app/assistant'
-      path: '/assistant'
-      fullPath: '/assistant'
-      preLoaderRoute: typeof AppAssistantRouteImport
+    '/_app/assistia': {
+      id: '/_app/assistia'
+      path: '/assistia'
+      fullPath: '/assistia'
+      preLoaderRoute: typeof AppAssistiaRouteImport
       parentRoute: typeof AppRoute
     }
   }
 }
 
 interface AppRouteChildren {
-  AppAssistantRoute: typeof AppAssistantRoute
+  AppAssistiaRoute: typeof AppAssistiaRoute
   AppBillingRoute: typeof AppBillingRoute
-  AppClientsRoute: typeof AppClientsRoute
-  AppConversationsRoute: typeof AppConversationsRoute
+  AppClientesRoute: typeof AppClientesRoute
+  AppConfiguracionRoute: typeof AppConfiguracionRoute
+  AppConversacionesRoute: typeof AppConversacionesRoute
   AppDashboardRoute: typeof AppDashboardRoute
-  AppNotificationsRoute: typeof AppNotificationsRoute
-  AppSettingsRoute: typeof AppSettingsRoute
-  AppUsageRoute: typeof AppUsageRoute
+  AppNotificacionesRoute: typeof AppNotificacionesRoute
+  AppUsoMensualRoute: typeof AppUsoMensualRoute
   AppWhatsappRoute: typeof AppWhatsappRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppAssistantRoute: AppAssistantRoute,
+  AppAssistiaRoute: AppAssistiaRoute,
   AppBillingRoute: AppBillingRoute,
-  AppClientsRoute: AppClientsRoute,
-  AppConversationsRoute: AppConversationsRoute,
+  AppClientesRoute: AppClientesRoute,
+  AppConfiguracionRoute: AppConfiguracionRoute,
+  AppConversacionesRoute: AppConversacionesRoute,
   AppDashboardRoute: AppDashboardRoute,
-  AppNotificationsRoute: AppNotificationsRoute,
-  AppSettingsRoute: AppSettingsRoute,
-  AppUsageRoute: AppUsageRoute,
+  AppNotificacionesRoute: AppNotificacionesRoute,
+  AppUsoMensualRoute: AppUsoMensualRoute,
   AppWhatsappRoute: AppWhatsappRoute,
 }
 
@@ -316,13 +316,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
