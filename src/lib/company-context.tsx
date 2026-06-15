@@ -41,7 +41,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     while (attempts < 6 && !prof) {
       const { data } = await supabase
         .from("profiles")
-        .select("*")
+        .select("id,company_id,full_name,role")
         .eq("id", user.id)
         .maybeSingle();
       if (data) {
@@ -63,7 +63,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     setProfile(prof);
     const { data: comp } = await supabase
       .from("companies")
-      .select("*")
+      .select("id,name,legal_name,email,phone,country,city,address,tax_id,industry,status,onboarding_status")
       .eq("id", prof.company_id)
       .maybeSingle();
     setCompany((comp as Company) ?? null);
