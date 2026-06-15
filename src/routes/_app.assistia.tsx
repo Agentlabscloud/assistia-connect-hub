@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import type { Assistant } from "@/lib/types";
 
-export const Route = createFileRoute("/_app/assistant")({
+export const Route = createFileRoute("/_app/assistia")({
   component: AssistantPage,
 });
 

@@ -8,7 +8,7 @@ import type { Conversation, Message } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { MessagesSquare } from "lucide-react";
 
-export const Route = createFileRoute("/_app/conversations")({
+export const Route = createFileRoute("/_app/conversaciones")({
   component: ConversationsPage,
 });
 

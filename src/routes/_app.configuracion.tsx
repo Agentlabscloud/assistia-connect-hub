@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 
-export const Route = createFileRoute("/_app/settings")({
+export const Route = createFileRoute("/_app/configuracion")({
   component: SettingsPage,
 });
 

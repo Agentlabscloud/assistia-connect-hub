@@ -6,7 +6,7 @@ import { PageHeader, LoadingState, EmptyState, StatCard, ProgressBar } from "@/c
 import type { UsageCounter } from "@/lib/types";
 import { AlertTriangle } from "lucide-react";
 
-export const Route = createFileRoute("/_app/usage")({
+export const Route = createFileRoute("/_app/uso-mensual")({
   component: UsagePage,
 });
 

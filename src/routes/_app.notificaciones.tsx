@@ -6,7 +6,7 @@ import { PageHeader, LoadingState, EmptyState } from "@/components/ui-bits";
 import type { Assistant, UsageCounter, WhatsappAccount } from "@/lib/types";
 import { AlertTriangle, Bell, CheckCircle2, Info } from "lucide-react";
 
-export const Route = createFileRoute("/_app/notifications")({
+export const Route = createFileRoute("/_app/notificaciones")({
   component: NotificationsPage,
 });
 
