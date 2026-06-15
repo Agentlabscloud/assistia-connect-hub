@@ -21,13 +21,34 @@ const WA_COLUMNS =
 const ERROR_HELP: Record<string, string> = {
   token_check: "Revisa que el token esté vigente y que lo hayas copiado correctamente.",
   phone_number_id_check: "Revisa el Phone Number ID en Meta WhatsApp Manager.",
-  waba_id_check: "Revisa el WhatsApp Business Account ID.",
-  phone_waba_match: "El número no pertenece al WABA enviado.",
+  waba_id_check: "Revisa el WhatsApp Business Account ID (WABA ID).",
+  phone_waba_match: "El número no pertenece al WABA ID enviado.",
 };
+
+function genVerifyToken() {
+  return (
+    "asistia_" +
+    Math.random().toString(36).slice(2, 10) +
+    Math.random().toString(36).slice(2, 10)
+  );
+}
 
 function WhatsappPage() {
   const { companyId } = useCompany();
   const qc = useQueryClient();
+
+  const { data: assistant } = useQuery({
+    queryKey: ["assistant-id", companyId],
+    enabled: !!companyId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("assistants")
+        .select("id")
+        .eq("company_id", companyId)
+        .maybeSingle();
+      return (data as { id: string } | null) ?? null;
+    },
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ["wa", companyId],
@@ -42,10 +63,13 @@ function WhatsappPage() {
     },
   });
 
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [phoneNumberId, setPhoneNumberId] = useState("");
   const [wabaId, setWabaId] = useState("");
+  const [metaBusinessId, setMetaBusinessId] = useState("");
+  const [verifyToken, setVerifyToken] = useState("");
   const [accessToken, setAccessToken] = useState("");
-  const [testing, setTesting] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<
     | { ok: true; phone_number?: string; verified_name?: string; quality_rating?: string }
     | { ok: false; message?: string; error_step?: string; error_code?: string }
@@ -54,31 +78,104 @@ function WhatsappPage() {
 
   useEffect(() => {
     if (data) {
+      setPhoneNumber(data.phone_number ?? "");
       setPhoneNumberId(data.phone_number_id ?? "");
       setWabaId(data.whatsapp_business_account_id ?? "");
+      setMetaBusinessId(data.meta_business_id ?? "");
     }
   }, [data]);
 
-  const onTest = async () => {
-    if (!data?.id) {
-      toast.error("No existe la cuenta de WhatsApp.");
+  const saveAccount = async (): Promise<WhatsappAccount> => {
+    if (!companyId) throw new Error("No se pudo identificar tu empresa.");
+    const assistantId = assistant?.id ?? data?.assistant_id ?? null;
+
+    const vt = verifyToken.trim() || genVerifyToken();
+    const payload = {
+      company_id: companyId,
+      assistant_id: assistantId,
+      phone_number: phoneNumber.trim() || null,
+      phone_number_id: phoneNumberId.trim(),
+      whatsapp_business_account_id: wabaId.trim(),
+      meta_business_id: metaBusinessId.trim() || null,
+      verify_token: vt,
+      status: "pending",
+      webhook_status: "pending",
+      connection_step: "configured",
+      connection_error: null,
+      connection_error_code: null,
+      connection_error_details: null,
+    };
+
+    if (data?.id) {
+      const { data: updated, error } = await supabase
+        .from("whatsapp_accounts")
+        .update(payload)
+        .eq("id", data.id)
+        .eq("company_id", companyId)
+        .select(WA_COLUMNS)
+        .maybeSingle();
+      if (error) throw error;
+      return updated as WhatsappAccount;
+    }
+
+    const { data: inserted, error } = await supabase
+      .from("whatsapp_accounts")
+      .insert(payload)
+      .select(WA_COLUMNS)
+      .maybeSingle();
+    if (error) throw error;
+    return inserted as WhatsappAccount;
+  };
+
+  const onSubmit = async (mode: "save" | "test") => {
+    if (!phoneNumberId.trim() || !wabaId.trim()) {
+      toast.error("Completa Phone Number ID y WABA ID.");
       return;
     }
-    if (!phoneNumberId || !wabaId || !accessToken) {
-      toast.error("Completa los 3 campos para probar.");
+    if (mode === "test" && !accessToken.trim()) {
+      toast.error("Ingresa el Access Token para probar la conexión.");
       return;
     }
-    setTesting(true);
+    setSubmitting(true);
     setResult(null);
+
+    let saved: WhatsappAccount;
+    try {
+      saved = await saveAccount();
+      qc.invalidateQueries({ queryKey: ["wa", companyId] });
+      if (mode === "save") {
+        toast.success("Datos de WhatsApp guardados.");
+        setSubmitting(false);
+        return;
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Error desconocido";
+      toast.error("No se pudo guardar la cuenta de WhatsApp. Revisa los datos e intenta nuevamente.", {
+        description: msg,
+      });
+      setSubmitting(false);
+      return;
+    }
+
+    if (!N8N_TEST_META_WEBHOOK) {
+      toast.error("Falta configurar el webhook de prueba.");
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const res = await fetch(N8N_TEST_META_WEBHOOK, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          whatsapp_account_id: data.id,
           company_id: companyId,
-          phone_number_id: phoneNumberId,
-          whatsapp_business_account_id: wabaId,
+          assistant_id: saved.assistant_id ?? null,
+          whatsapp_account_id: saved.id,
+          phone_number: saved.phone_number,
+          phone_number_id: saved.phone_number_id,
+          whatsapp_business_account_id: saved.whatsapp_business_account_id,
+          meta_business_id: saved.meta_business_id ?? null,
+          verify_token: verifyToken.trim() || undefined,
           access_token: accessToken,
         }),
       });
@@ -100,12 +197,13 @@ function WhatsappPage() {
         });
         toast.error(json.message || "No se pudo conectar.");
       }
-    } catch {
-      toast.error("No pudimos conectar con el servicio de validación. Intenta nuevamente o contacta soporte.");
-      setResult({ ok: false, message: "Servicio no disponible." });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Servicio no disponible.";
+      toast.error("No pudimos conectar con el servicio de validación.", { description: msg });
+      setResult({ ok: false, message: msg });
     } finally {
-      setTesting(false);
       setAccessToken("");
+      setSubmitting(false);
       qc.invalidateQueries({ queryKey: ["wa", companyId] });
     }
   };
@@ -122,7 +220,11 @@ function WhatsappPage() {
             <div className="text-sm text-muted-foreground">Estado actual</div>
             <div className="mt-1">
               <StatusBadge status={data?.status ?? "pending"}>
-                {data?.status === "connected" ? "Conectado" : data?.status === "failed" ? "Error" : "Pendiente"}
+                {data?.status === "connected"
+                  ? "Conectado"
+                  : data?.status === "failed"
+                  ? "Error"
+                  : "Pendiente"}
               </StatusBadge>
             </div>
           </div>
@@ -135,24 +237,57 @@ function WhatsappPage() {
 
         <div className="space-y-4">
           <div>
+            <Label htmlFor="pn">Número de WhatsApp</Label>
+            <Input
+              id="pn"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="+57 300 000 0000"
+            />
+          </div>
+          <div>
             <Label htmlFor="pnid">Phone Number ID</Label>
             <Input id="pnid" value={phoneNumberId} onChange={(e) => setPhoneNumberId(e.target.value)} />
           </div>
           <div>
-            <Label htmlFor="waba">WhatsApp Business Account ID</Label>
+            <Label htmlFor="waba">WABA ID (WhatsApp Business Account ID)</Label>
             <Input id="waba" value={wabaId} onChange={(e) => setWabaId(e.target.value)} />
           </div>
           <div>
+            <Label htmlFor="mbid">Meta Business ID (opcional)</Label>
+            <Input id="mbid" value={metaBusinessId} onChange={(e) => setMetaBusinessId(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="vt">Verify Token (opcional)</Label>
+            <Input
+              id="vt"
+              value={verifyToken}
+              onChange={(e) => setVerifyToken(e.target.value)}
+              placeholder="Se generará automáticamente si lo dejas vacío"
+            />
+          </div>
+          <div>
             <Label htmlFor="tok">Access Token</Label>
-            <Input id="tok" type="password" value={accessToken} onChange={(e) => setAccessToken(e.target.value)} placeholder="Solo se usa para probar, no se guarda." />
+            <Input
+              id="tok"
+              type="password"
+              value={accessToken}
+              onChange={(e) => setAccessToken(e.target.value)}
+              placeholder="Solo se usa para probar, no se guarda."
+            />
             <p className="text-xs text-muted-foreground mt-1">
               Por seguridad, el Access Token no se almacena. Solo se envía al servicio de validación.
             </p>
           </div>
 
-          <Button onClick={onTest} disabled={testing} className="w-full sm:w-auto">
-            {testing ? "Probando…" : "Probar conexión"}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => onSubmit("save")} disabled={submitting} variant="outline">
+              {submitting ? "Guardando…" : "Guardar"}
+            </Button>
+            <Button onClick={() => onSubmit("test")} disabled={submitting}>
+              {submitting ? "Probando…" : "Guardar y probar conexión"}
+            </Button>
+          </div>
         </div>
 
         {result?.ok === true && (
