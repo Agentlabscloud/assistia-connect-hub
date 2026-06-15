@@ -15,8 +15,11 @@ export const Route = createFileRoute("/_app/whatsapp")({
   component: WhatsappPage,
 });
 
+const WA_COLUMNS =
+  "id,company_id,assistant_id,phone_number,phone_number_id,whatsapp_business_account_id,meta_business_id,status,webhook_status";
+
 const ERROR_HELP: Record<string, string> = {
-  token_check: "Revisa que el token esté vigente y que lo hayas copiado sin la palabra Bearer.",
+  token_check: "Revisa que el token esté vigente y que lo hayas copiado correctamente.",
   phone_number_id_check: "Revisa el Phone Number ID en Meta WhatsApp Manager.",
   waba_id_check: "Revisa el WhatsApp Business Account ID.",
   phone_waba_match: "El número no pertenece al WABA enviado.",
@@ -30,7 +33,11 @@ function WhatsappPage() {
     queryKey: ["wa", companyId],
     enabled: !!companyId,
     queryFn: async () => {
-      const { data } = await supabase.from("whatsapp_accounts").select("*").eq("company_id", companyId).maybeSingle();
+      const { data } = await supabase
+        .from("whatsapp_accounts")
+        .select(WA_COLUMNS)
+        .eq("company_id", companyId)
+        .maybeSingle();
       return (data as WhatsappAccount) ?? null;
     },
   });
@@ -109,7 +116,7 @@ function WhatsappPage() {
     <div>
       <PageHeader title="Conecta WhatsApp" subtitle="Valida tu conexión con WhatsApp Cloud API." />
 
-      <div className="bg-white rounded-xl border shadow-sm p-6 max-w-3xl">
+      <div className="bg-white rounded-xl border shadow-sm p-5 sm:p-6 max-w-3xl">
         <div className="flex items-center justify-between mb-4 gap-4 flex-wrap">
           <div>
             <div className="text-sm text-muted-foreground">Estado actual</div>
@@ -119,9 +126,8 @@ function WhatsappPage() {
               </StatusBadge>
             </div>
           </div>
-          {data?.verified_name && (
+          {data?.phone_number && (
             <div className="text-sm text-right">
-              <div className="font-medium">{data.verified_name}</div>
               <div className="text-muted-foreground">{data.phone_number}</div>
             </div>
           )}
@@ -144,7 +150,7 @@ function WhatsappPage() {
             </p>
           </div>
 
-          <Button onClick={onTest} disabled={testing}>
+          <Button onClick={onTest} disabled={testing} className="w-full sm:w-auto">
             {testing ? "Probando…" : "Probar conexión"}
           </Button>
         </div>
