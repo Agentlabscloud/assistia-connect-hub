@@ -10,6 +10,19 @@ export const Route = createFileRoute("/_app/billing")({
   component: BillingPage,
 });
 
+const FEATURES = [
+  "Hasta 5.000 respuestas generadas por IA al mes",
+  "1 WhatsApp",
+  "1 asistente IA",
+  "7 días de optimización",
+  "Costos de WhatsApp Cloud API asumidos por el cliente directamente con Meta",
+];
+
+function fmtDate(s?: string | null) {
+  if (!s) return "No disponible";
+  return new Date(s).toLocaleDateString("es");
+}
+
 function BillingPage() {
   const { companyId } = useCompany();
 
@@ -17,7 +30,11 @@ function BillingPage() {
     queryKey: ["sub", companyId],
     enabled: !!companyId,
     queryFn: async () => {
-      const { data } = await supabase.from("subscriptions").select("*").eq("company_id", companyId).maybeSingle();
+      const { data } = await supabase
+        .from("subscriptions")
+        .select("id,company_id,plan_name,setup_fee_cop,monthly_fee_cop,included_messages,billing_status,current_period_start,current_period_end")
+        .eq("company_id", companyId)
+        .maybeSingle();
       return (data as Subscription) ?? null;
     },
   });
@@ -26,45 +43,41 @@ function BillingPage() {
 
   return (
     <div>
-      <PageHeader title="Billing" subtitle="Consulta tu plan y estado de suscripción." />
+      <PageHeader title="Plan" subtitle="Consulta tu plan y estado de suscripción." />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-white border rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="lg:col-span-2 bg-white border rounded-xl shadow-sm p-5 sm:p-6">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <div className="text-xs uppercase tracking-wide text-muted-foreground">Plan MVP</div>
-              <h2 className="text-2xl font-semibold mt-1">Assistia MVP</h2>
+              <div className="text-xs uppercase tracking-wide text-muted-foreground">Plan actual</div>
+              <h2 className="text-2xl font-semibold mt-1">Premium</h2>
             </div>
             <div className="text-right">
               <div className="text-sm text-muted-foreground">Setup único</div>
-              <div className="text-lg font-semibold">499.000 COP</div>
+              <div className="text-lg font-semibold">599.000 COP</div>
               <div className="text-sm text-muted-foreground mt-2">Mensualidad</div>
-              <div className="text-lg font-semibold">299.000 COP</div>
+              <div className="text-lg font-semibold">399.000 COP</div>
             </div>
           </div>
 
           <ul className="mt-6 space-y-2 text-sm">
-            {[
-              "Hasta 5.000 respuestas generadas por IA al mes",
-              "1 WhatsApp",
-              "1 asistente IA",
-              "7 días de optimización",
-              "Costos de WhatsApp Cloud API asumidos por el cliente directamente con Meta",
-            ].map((f) => (
+            {FEATURES.map((f) => (
               <li key={f} className="flex items-start gap-2">
-                <Check className="h-4 w-4 mt-0.5 text-[color:var(--brand-green)]" />
+                <Check className="h-4 w-4 mt-0.5 text-[color:var(--brand-green)] shrink-0" />
                 <span>{f}</span>
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="space-y-4">
-          <StatCard label="Plan actual" value={data?.plan_name || "MVP"} />
-          <StatCard label="Estado" value={data?.status || "—"} />
-          <StatCard label="Inicio" value={data?.started_at ? new Date(data.started_at).toLocaleDateString("es") : "—"} />
-          <StatCard label="Vencimiento" value={data?.ends_at ? new Date(data.ends_at).toLocaleDateString("es") : "—"} />
-          <StatCard label="Límite mensual" value={data?.messages_limit ?? "—"} />
+        <div className="space-y-3">
+          <StatCard label="Estado de facturación" value={data?.billing_status || "No disponible"} />
+          <StatCard
+            label="Respuestas IA incluidas"
+            value={data?.included_messages ? `${data.included_messages}` : "5.000"}
+          />
+          <StatCard label="Inicio del periodo" value={fmtDate(data?.current_period_start)} />
+          <StatCard label="Fin del periodo" value={fmtDate(data?.current_period_end)} />
         </div>
       </div>
     </div>

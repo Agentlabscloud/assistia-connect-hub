@@ -8,11 +8,19 @@ export interface Profile {
 export interface Company {
   id: string;
   name: string | null;
+  legal_name?: string | null;
   email: string | null;
+  phone?: string | null;
   country: string | null;
+  city?: string | null;
+  address?: string | null;
+  tax_id?: string | null;
+  industry?: string | null;
   status?: string | null;
   onboarding_status?: string | null;
 }
+
+export type AssistantType = "ventas" | "soporte" | "agenda" | string;
 
 export interface Assistant {
   id: string;
@@ -24,36 +32,39 @@ export interface Assistant {
   tone: string | null;
   fallback_message: string | null;
   handoff_phone: string | null;
+  assistant_type?: AssistantType | null;
+  optimization_ends_at?: string | null;
   status?: string | null;
 }
 
 export interface WhatsappAccount {
   id: string;
   company_id: string;
+  assistant_id?: string | null;
   phone_number_id: string | null;
   whatsapp_business_account_id: string | null;
+  meta_business_id?: string | null;
   phone_number?: string | null;
+  status: "connected" | "pending" | "failed" | string | null;
+  webhook_status?: string | null;
+  // local-only UI fields (not persisted columns)
   verified_name?: string | null;
   quality_rating?: string | null;
-  status: "connected" | "pending" | "failed" | string | null;
   connection_error?: string | null;
 }
 
 export interface UsageCounter {
   id: string;
   company_id: string;
-  period_start?: string | null;
-  period_end?: string | null;
+  period_month?: string | null;
   messages_used: number | null;
   messages_limit: number | null;
-  tokens_used: number | null;
-  tokens_limit: number | null;
-  estimated_ai_cost?: number | null;
 }
 
 export interface Contact {
   id: string;
   company_id: string;
+  whatsapp_account_id?: string | null;
   name: string | null;
   phone: string | null;
   city: string | null;
@@ -67,11 +78,14 @@ export interface Contact {
 export interface Conversation {
   id: string;
   company_id: string;
+  assistant_id?: string | null;
+  whatsapp_account_id?: string | null;
   customer_name: string | null;
   customer_phone: string | null;
   status: string | null;
   lead_status: string | null;
   interest_level: string | null;
+  notes?: string | null;
   last_message_at: string | null;
 }
 
@@ -80,6 +94,7 @@ export interface Message {
   conversation_id: string;
   company_id: string;
   direction: "inbound" | "outbound" | string;
+  message_type?: string | null;
   content: string | null;
   created_at: string | null;
 }
@@ -88,8 +103,14 @@ export interface Subscription {
   id: string;
   company_id: string;
   plan_name?: string | null;
-  status?: string | null;
-  started_at?: string | null;
-  ends_at?: string | null;
-  messages_limit?: number | null;
+  setup_fee_cop?: number | null;
+  monthly_fee_cop?: number | null;
+  included_messages?: number | null;
+  billing_status?: string | null;
+  trial_ends_at?: string | null;
+  current_period_start?: string | null;
+  current_period_end?: string | null;
 }
+
+export const SUPPORT_EMAIL = "admin@agentlabs.cloud";
+export const DEFAULT_MESSAGE_LIMIT = 5000;
