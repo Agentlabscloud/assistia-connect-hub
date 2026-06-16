@@ -49,7 +49,9 @@ export interface WhatsappAccount {
   webhook_status?: string | null;
   // local-only UI fields (not persisted columns)
   verified_name?: string | null;
+  display_phone_number?: string | null;
   quality_rating?: string | null;
+  verify_token?: string | null;
   connection_error?: string | null;
 }
 

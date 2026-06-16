@@ -289,11 +289,11 @@ function AssistantPage() {
         <section className="bg-white rounded-xl border shadow-sm p-5 sm:p-6 space-y-5">
           <h2 className="text-base font-semibold">Atención humana</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Teléfono de handoff" id="handoff_phone" help="Número al que se enviará al cliente si necesita hablar con una persona.">
+            <Field label="Teléfono de atención humana" id="handoff_phone" help="Número al que se enviará el cliente si necesita hablar con una persona.">
               <Input id="handoff_phone" value={form.handoff_phone} onChange={(e) => setForm({ ...form, handoff_phone: e.target.value })} />
             </Field>
           </div>
-          <Field label="Mensaje de fallback" id="fallback_message" help="Mensaje que se usará cuando el asistente no tenga información suficiente.">
+          <Field label="Mensaje cuando el asistente no tenga respuesta" id="fallback_message" help="Mensaje que se usará cuando el asistente no tenga información suficiente o necesite escalar la conversación.">
             <Textarea id="fallback_message" rows={3} value={form.fallback_message} onChange={(e) => setForm({ ...form, fallback_message: e.target.value })} />
           </Field>
         </section>
