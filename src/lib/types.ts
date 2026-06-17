@@ -75,6 +75,9 @@ export interface Contact {
   status: string | null;
   last_interaction_at: string | null;
   created_at: string | null;
+  last_intent?: string | null;
+  memory_summary?: string | null;
+  last_interest_at?: string | null;
 }
 
 export interface Conversation {
@@ -89,6 +92,11 @@ export interface Conversation {
   interest_level: string | null;
   notes?: string | null;
   last_message_at: string | null;
+  created_at?: string | null;
+  summary?: string | null;
+  last_intent?: string | null;
+  next_action?: string | null;
+  context_updated_at?: string | null;
 }
 
 export interface Message {

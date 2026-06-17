@@ -6,6 +6,7 @@ import { PageHeader, StatusBadge, ProgressBar, LoadingState } from "@/components
 import { Button } from "@/components/ui/button";
 import { SUPPORT_EMAIL, DEFAULT_MESSAGE_LIMIT } from "@/lib/types";
 import type { Assistant, WhatsappAccount, UsageCounter, Subscription } from "@/lib/types";
+import { tStatus } from "@/lib/i18n";
 import {
   ArrowRight,
   CheckCircle2,
@@ -52,7 +53,7 @@ function Dashboard() {
     queryFn: async () => {
       const { data } = await supabase
         .from("whatsapp_accounts")
-        .select("id,company_id,assistant_id,phone_number,phone_number_id,whatsapp_business_account_id,status,webhook_status")
+        .select("id,company_id,assistant_id,phone_number,phone_number_id,whatsapp_business_account_id,status,webhook_status,display_phone_number,verified_name")
         .eq("company_id", companyId)
         .maybeSingle();
       return (data as WhatsappAccount) ?? null;
@@ -129,13 +130,30 @@ function Dashboard() {
   const usage = usageQ.data;
   const sub = subQ.data;
 
-  const step1Done = !!(assistant?.business_description && assistant?.tone && assistant?.fallback_message);
-  const step2Done = wa?.status === "connected";
-  const step3Done = step2Done;
+  // Computed onboarding steps using REAL columns
+  const assistantConfigured = !!(assistant?.business_description && assistant?.assistant_type);
+  const waConnected = wa?.status === "connected" || wa?.webhook_status === "connected";
+  const step1Done = assistantConfigured;
+  const step2Done = waConnected;
+  const step3Done = waConnected && assistantConfigured;
   const stepsDone = [step1Done, step2Done, step3Done].filter(Boolean).length;
+  const onboardingComplete = stepsDone === 3;
 
-  const assistantStatusLabel = assistant?.status === "active" ? "Activo" : "En configuración";
-  const waLabel = wa?.status === "connected" ? "Conectado" : wa?.status === "failed" ? "Error" : "Pendiente";
+  // Assistia state
+  let assistiaLabel = "Falta configurar Assistia";
+  let assistiaTone: "active" | "pending" = "pending";
+  if (onboardingComplete) {
+    assistiaLabel = "Lista para operar";
+    assistiaTone = "active";
+  } else if (!assistantConfigured) {
+    assistiaLabel = "Falta configurar Assistia";
+  } else if (!waConnected) {
+    assistiaLabel = "Falta conectar WhatsApp";
+  }
+
+  const waLabel = waConnected ? "Conectado" : "Pendiente";
+  const waTone: "connected" | "pending" = waConnected ? "connected" : "pending";
+  const waPhone = wa?.display_phone_number || wa?.phone_number || null;
 
   const msgUsed = usage?.messages_used ?? 0;
   const msgLimit = usage?.messages_limit && usage.messages_limit > 0
@@ -145,6 +163,12 @@ function Dashboard() {
       : DEFAULT_MESSAGE_LIMIT;
   const msgPct = msgLimit > 0 ? (msgUsed / msgLimit) * 100 : 0;
 
+  const planLabel = sub?.plan_name || "Sin plan asignado";
+  const onboardingLabel = onboardingComplete
+    ? "Completado"
+    : tStatus(company?.onboarding_status ?? "pending");
+  const onboardingTone = onboardingComplete ? "active" : "pending";
+
   return (
     <div>
       <PageHeader title="Bienvenido a Assistia" subtitle="Atiende, responde y vende por WhatsApp con IA." />
@@ -153,14 +177,20 @@ function Dashboard() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <LinkCard to="/assistia" icon={<Bot className="h-5 w-5" />} label="Estado de Assistia">
-          <StatusBadge status={assistant?.status === "active" ? "active" : "draft"}>{assistantStatusLabel}</StatusBadge>
+          <StatusBadge status={assistiaTone}>{assistiaLabel}</StatusBadge>
         </LinkCard>
+
         <LinkCard to="/whatsapp" icon={<MessageCircle className="h-5 w-5" />} label="Estado de WhatsApp">
-          <StatusBadge status={wa?.status ?? "pending"}>{waLabel}</StatusBadge>
+          <StatusBadge status={waTone}>{waLabel}</StatusBadge>
+          {waPhone && (
+            <div className="mt-2 text-xs text-muted-foreground truncate">{waPhone}</div>
+          )}
         </LinkCard>
+
         <LinkCard to="/clientes" icon={<Users className="h-5 w-5" />} label="Clientes registrados">
           <div className="text-2xl font-semibold">{contactsCountQ.data ?? 0}</div>
         </LinkCard>
+
         <LinkCard to="/conversaciones" icon={<MessagesSquare className="h-5 w-5" />} label="Conversaciones abiertas">
           <div className="text-2xl font-semibold">{openConvQ.data ?? 0}</div>
         </LinkCard>
@@ -184,12 +214,14 @@ function Dashboard() {
         </LinkCard>
 
         <LinkCard to="/billing" icon={<CreditCard className="h-5 w-5" />} label="Plan actual">
-          <div className="text-lg font-semibold">Premium</div>
+          <div className="text-lg font-semibold truncate">{planLabel}</div>
+          {sub?.billing_status && (
+            <div className="mt-1 text-xs text-muted-foreground">{tStatus(sub.billing_status)}</div>
+          )}
         </LinkCard>
-        <LinkCard to="/configuracion" icon={<Settings className="h-5 w-5" />} label="Onboarding">
-          <StatusBadge status={company?.onboarding_status ?? "pending"}>
-            {company?.onboarding_status ?? "pendiente"}
-          </StatusBadge>
+
+        <LinkCard to="/configuracion" icon={<Settings className="h-5 w-5" />} label="Configuración inicial">
+          <StatusBadge status={onboardingTone}>{onboardingLabel}</StatusBadge>
         </LinkCard>
       </div>
 
@@ -198,7 +230,7 @@ function Dashboard() {
           <div>
             <h2 className="text-lg font-semibold">Configura Assistia en 3 pasos</h2>
             <p className="text-sm text-muted-foreground">
-              {stepsDone === 3
+              {onboardingComplete
                 ? "Assistia está lista para operar."
                 : "Completa estos pasos para dejar Assistia lista para atender clientes."}
             </p>
@@ -316,7 +348,7 @@ function OnboardingStep({
       </div>
       <p className="text-sm text-muted-foreground mt-2 flex-1">{description}</p>
       <Link to={to} className="mt-3">
-        <Button size="sm" variant={done ? "outline" : "default"} className="w-full sm:w-auto">
+        <Button size="sm" variant={done ? "outline" : "default"} className="w-full sm:w-auto min-h-[44px]">
           {cta} <ArrowRight className="h-3 w-3 ml-1" />
         </Button>
       </Link>
