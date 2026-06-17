@@ -173,20 +173,42 @@ function SettingsPage() {
 
         <section className="bg-white rounded-xl border shadow-sm p-5 sm:p-6">
           <h2 className="text-base font-semibold mb-3">Estado de la cuenta</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Estado</div>
-              <StatusBadge status={company?.status ?? "—"}>{company?.status ?? "—"}</StatusBadge>
-            </div>
-            <div>
-              <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Onboarding</div>
-              <StatusBadge status={company?.onboarding_status ?? "—"}>{company?.onboarding_status ?? "—"}</StatusBadge>
-            </div>
-          </div>
-          <p className="text-xs text-muted-foreground mt-3">
-            Estos valores son administrados por AgentLabs Cloud y no son editables.
-          </p>
+          {(() => {
+            const asst = assistantQ.data;
+            const wa = waQ.data;
+            const assistantConfigured = !!(asst?.business_description && asst?.assistant_type);
+            const waConnected = wa?.status === "connected" || wa?.webhook_status === "connected";
+            const completed = assistantConfigured && waConnected;
+            const onboardingLabel = completed ? "Completado" : tStatus(company?.onboarding_status ?? "pending");
+            const onboardingTone = completed ? "active" : "pending";
+            return (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Estado</div>
+                    <StatusBadge status={company?.status === "suspended" ? "failed" : "active"}>
+                      {tStatus(company?.status ?? "active")}
+                    </StatusBadge>
+                  </div>
+                  <div>
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Configuración inicial</div>
+                    <StatusBadge status={onboardingTone}>{onboardingLabel}</StatusBadge>
+                  </div>
+                </div>
+                {completed && (
+                  <div className="mt-4 flex items-center gap-2 rounded-lg border border-[color:var(--success)]/30 bg-[color:var(--success)]/10 p-3 text-sm text-[color:var(--success)]">
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                    <span>Configuración completada. Assistia está lista para atender clientes.</span>
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground mt-3">
+                  Estos valores son administrados por AgentLabs Cloud.
+                </p>
+              </>
+            );
+          })()}
         </section>
+
 
         <div className="sticky bottom-20 lg:bottom-4 bg-white/80 backdrop-blur rounded-xl border p-3 flex justify-end">
           <Button type="submit" disabled={mut.isPending} className="w-full sm:w-auto">
