@@ -215,9 +215,27 @@ function AssistantPage() {
     );
   }
 
+  const assistantConfigured = !!(data.business_description && data.assistant_type);
+  const hasHandoff = !!form.handoff_phone;
+
   return (
     <div>
       <PageHeader title="Configura Assistia" subtitle="Define cómo debe responder tu asistente por WhatsApp." />
+
+      {assistantConfigured ? (
+        <div className="mb-5 rounded-lg border border-[color:var(--success)]/30 bg-[color:var(--success)]/10 p-4 text-sm text-[color:var(--success)] flex items-start gap-2">
+          <span className="font-medium">✓ Assistia está lista para responder clientes.</span>
+        </div>
+      ) : (
+        <div className="mb-5 rounded-lg border border-[color:var(--warning)]/40 bg-[color:var(--warning)]/15 p-4 text-sm text-[color:var(--warning-foreground)]">
+          <div className="font-medium mb-1">Para terminar la configuración:</div>
+          <ul className="list-disc pl-5 space-y-0.5">
+            {!data.business_description && <li>Falta completar información del negocio.</li>}
+            {!data.assistant_type && <li>Falta elegir el tipo de asistente.</li>}
+            {!hasHandoff && <li>Te recomendamos definir un teléfono de atención humana.</li>}
+          </ul>
+        </div>
+      )}
 
       <form
         onSubmit={(e) => {
