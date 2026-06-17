@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useCompany } from "@/lib/company-context";
 import { PageHeader, LoadingState, StatusBadge } from "@/components/ui-bits";
@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
+import { tStatus } from "@/lib/i18n";
+import type { Assistant, WhatsappAccount } from "@/lib/types";
+import { CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/configuracion")({
   component: SettingsPage,
