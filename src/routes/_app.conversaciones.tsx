@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
-import { LeadBadge } from "@/routes/_app.clientes";
+import { LeadBadge } from "@/components/LeadBadge";
 import {
   tInterestLevel,
   tIntent,
