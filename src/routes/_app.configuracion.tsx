@@ -41,9 +41,36 @@ const EMPTY: FormState = {
 };
 
 function SettingsPage() {
-  const { company, loading, refetch } = useCompany();
+  const { company, companyId, loading, refetch } = useCompany();
   const qc = useQueryClient();
   const [form, setForm] = useState<FormState>(EMPTY);
+
+  const assistantQ = useQuery({
+    queryKey: ["assistant-cfg", companyId],
+    enabled: !!companyId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("assistants")
+        .select("id,business_description,assistant_type,status")
+        .eq("company_id", companyId)
+        .maybeSingle();
+      return (data as Assistant) ?? null;
+    },
+  });
+
+  const waQ = useQuery({
+    queryKey: ["wa-cfg", companyId],
+    enabled: !!companyId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("whatsapp_accounts")
+        .select("id,status,webhook_status")
+        .eq("company_id", companyId)
+        .maybeSingle();
+      return (data as WhatsappAccount) ?? null;
+    },
+  });
+
 
   useEffect(() => {
     if (company) {
