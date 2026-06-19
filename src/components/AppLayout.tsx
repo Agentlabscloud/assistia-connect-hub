@@ -20,6 +20,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useCompany } from "@/lib/company-context";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { WhatsAppConnectionBanner } from "@/components/WhatsAppConnectionBanner";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
