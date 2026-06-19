@@ -134,6 +134,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </Button>
         </header>
         <main className="flex-1 p-4 lg:p-8 max-w-7xl w-full mx-auto pb-24 lg:pb-8">
+          <WhatsAppConnectionBanner />
           {children}
         </main>
 
