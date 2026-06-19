@@ -20,6 +20,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useCompany } from "@/lib/company-context";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { WhatsAppConnectionBanner } from "@/components/WhatsAppConnectionBanner";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -133,6 +134,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </Button>
         </header>
         <main className="flex-1 p-4 lg:p-8 max-w-7xl w-full mx-auto pb-24 lg:pb-8">
+          <WhatsAppConnectionBanner />
           {children}
         </main>
 

@@ -47,12 +47,22 @@ export interface WhatsappAccount {
   phone_number?: string | null;
   status: "connected" | "pending" | "failed" | string | null;
   webhook_status?: string | null;
-  // local-only UI fields (not persisted columns)
   verified_name?: string | null;
   display_phone_number?: string | null;
   quality_rating?: string | null;
   verify_token?: string | null;
   connection_error?: string | null;
+  connection_step?: string | null;
+  connection_error_code?: string | null;
+  connection_error_details?: string | null;
+}
+
+export interface WhatsappTemplate {
+  name: string;
+  language: string;
+  status: string;
+  category?: string | null;
+  components?: unknown;
 }
 
 export interface UsageCounter {

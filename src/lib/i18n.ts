@@ -140,3 +140,46 @@ export function extractMessageContent(content?: string | null): string {
   }
   return content;
 }
+
+// "19 jun 2026, 5:22 p. m." — no seconds
+export function formatDateTime(value?: string | null): string {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return "—";
+  try {
+    return new Intl.DateTimeFormat("es", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    }).format(d);
+  } catch {
+    return d.toLocaleString("es");
+  }
+}
+
+export function isWithin24h(value?: string | null): boolean {
+  if (!value) return false;
+  const d = new Date(value).getTime();
+  if (isNaN(d)) return false;
+  return Date.now() - d < 24 * 60 * 60 * 1000;
+}
+
+export function currentPeriodMonth(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+// "junio de 2026"
+export function formatPeriodMonth(period?: string | null): string {
+  const p = period || currentPeriodMonth();
+  const [y, m] = p.split("-").map(Number);
+  if (!y || !m) return p;
+  try {
+    return new Intl.DateTimeFormat("es", { month: "long", year: "numeric" }).format(new Date(y, m - 1, 1));
+  } catch {
+    return p;
+  }
+}
