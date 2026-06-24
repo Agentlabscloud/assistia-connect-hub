@@ -156,8 +156,10 @@ function AssistantPage() {
     tone: "",
     handoff_phone: "",
     fallback_message: "",
+    booking_url: "",
   });
   const [guided, setGuided] = useState<GuidedFields>(EMPTY_GUIDED);
+  const [bookingError, setBookingError] = useState<string | null>(null);
 
   useEffect(() => {
     if (data) {
@@ -168,10 +170,23 @@ function AssistantPage() {
         tone: data.tone ?? "",
         handoff_phone: data.handoff_phone ?? "",
         fallback_message: data.fallback_message ?? "",
+        booking_url: data.booking_url ?? "",
       });
       setGuided(parseGuided(data.business_description));
     }
   }, [data]);
+
+  function validateBookingUrl(v: string): string | null {
+    const s = v.trim();
+    if (!s) return null;
+    try {
+      const u = new URL(s);
+      if (u.protocol !== "https:") return "Ingresa un enlace seguro que comience por https://";
+      return null;
+    } catch {
+      return "Ingresa un enlace seguro que comience por https://";
+    }
+  }
 
   const mut = useMutation({
     mutationFn: async () => {
