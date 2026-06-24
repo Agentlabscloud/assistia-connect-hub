@@ -262,6 +262,11 @@ function AssistantPage() {
       <form
         onSubmit={(e) => {
           e.preventDefault();
+          if (form.assistant_type === "agenda") {
+            const err = validateBookingUrl(form.booking_url);
+            setBookingError(err);
+            if (err) return;
+          }
           mut.mutate();
         }}
         className="space-y-6"
