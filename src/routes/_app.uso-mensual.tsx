@@ -256,8 +256,8 @@ function ActivityCard({
                 contentStyle={{ fontSize: 12, borderRadius: 8 }}
                 formatter={(v: number) => [v, "Cantidad"]}
               />
-              <Bar dataKey="count" fill={`hsl(var(--background))`} style={{ fill: `var(--brand-blue)` }} radius={[4, 4, 0, 0]} />
               <Bar dataKey="count" fill={color} radius={[4, 4, 0, 0]} />
+
             </BarChart>
           </ResponsiveContainer>
         )}
