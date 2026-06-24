@@ -627,13 +627,29 @@ function Chip({
   );
 }
 
-function templateRequiresImage(t: WhatsappTemplate): boolean {
+type TemplateMediaKind = "image" | "video" | "none" | "unsupported";
+
+function templateHeaderKind(t: WhatsappTemplate): TemplateMediaKind {
   const comps = Array.isArray(t.components) ? t.components : [];
-  return comps.some(
-    (c) =>
-      (c?.type || "").toUpperCase() === "HEADER" &&
-      (c?.format || "").toUpperCase() === "IMAGE",
-  );
+  const header = comps.find((c) => (c?.type || "").toUpperCase() === "HEADER");
+  if (!header) return "none";
+  const fmt = (header?.format || "").toUpperCase();
+  if (fmt === "" || fmt === "TEXT") return "none";
+  if (fmt === "IMAGE") return "image";
+  if (fmt === "VIDEO") return "video";
+  return "unsupported";
+}
+
+function isValidHttpsUrl(v: string): boolean {
+  const s = (v || "").trim();
+  if (!s || /\s/.test(s)) return false;
+  if (!s.startsWith("https://")) return false;
+  try {
+    const u = new URL(s);
+    return u.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function TemplatesList({
@@ -651,32 +667,55 @@ function TemplatesList({
 }) {
   const { companyId } = useCompany();
   const [pending, setPending] = useState<WhatsappTemplate | null>(null);
+  const [pendingKind, setPendingKind] = useState<TemplateMediaKind>("none");
+  const [mediaUrl, setMediaUrl] = useState("");
   const [sending, setSending] = useState(false);
 
   const contactLabel =
     contact?.name || conversation.customer_name || contact?.phone || conversation.customer_phone || "este contacto";
 
+  const closeForm = () => {
+    setPending(null);
+    setPendingKind("none");
+    setMediaUrl("");
+  };
+
+  const openPending = (t: WhatsappTemplate) => {
+    setPending(t);
+    setPendingKind(templateHeaderKind(t));
+    setMediaUrl("");
+  };
+
+  const needsUrl = pendingKind === "image" || pendingKind === "video";
+  const urlOk = !needsUrl || isValidHttpsUrl(mediaUrl);
+
   const send = async () => {
     if (!pending || !companyId || !contact?.id) return;
+    if (needsUrl && !isValidHttpsUrl(mediaUrl)) return;
     setSending(true);
     try {
+      const body: Record<string, unknown> = {
+        company_id: companyId,
+        contact_id: contact.id,
+        conversation_id: conversation.id,
+        message: "",
+        template_name: pending.name,
+        template_language: pending.language,
+      };
+      if (needsUrl) {
+        body.template_header_media_type = pendingKind;
+        body.template_header_media_url = mediaUrl.trim();
+      }
       const res = await fetch(N8N_MANUAL_REPLY_WEBHOOK, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          company_id: companyId,
-          contact_id: contact.id,
-          conversation_id: conversation.id,
-          message: "",
-          template_name: pending.name,
-          template_language: pending.language,
-        }),
+        body: JSON.stringify(body),
       });
       const data: { success?: boolean; sent?: boolean; message?: string } = await res
         .json()
         .catch(() => ({}));
-      if (data.success && data.sent !== false) {
-        setPending(null);
+      if (data.success || data.sent === true) {
+        closeForm();
         onSent();
       } else {
         onError(data.message || "No fue posible enviar la plantilla.");
@@ -693,7 +732,8 @@ function TemplatesList({
       <div className="text-xs text-muted-foreground">Plantillas aprobadas disponibles:</div>
       <ul className="divide-y rounded-md border bg-white">
         {templates.map((t) => {
-          const needsImage = templateRequiresImage(t);
+          const kind = templateHeaderKind(t);
+          const unsupported = kind === "unsupported";
           return (
             <li
               key={`${t.name}-${t.language}`}
@@ -705,18 +745,24 @@ function TemplatesList({
                   {t.language}
                   {t.category ? ` · ${t.category}` : ""}
                 </div>
-                {needsImage && (
+                {kind === "image" && (
+                  <div className="text-[11px] mt-0.5 text-muted-foreground">Incluye imagen</div>
+                )}
+                {kind === "video" && (
+                  <div className="text-[11px] mt-0.5 text-muted-foreground">Incluye video</div>
+                )}
+                {unsupported && (
                   <div className="text-[11px] mt-0.5 text-[color:var(--warning-foreground)]">
-                    Requiere imagen configurada
+                    Requiere configuración adicional.
                   </div>
                 )}
               </div>
               <Button
                 type="button"
                 size="sm"
-                variant={needsImage ? "outline" : "default"}
-                disabled={needsImage}
-                onClick={() => setPending(t)}
+                variant={unsupported ? "outline" : "default"}
+                disabled={unsupported}
+                onClick={() => openPending(t)}
                 className="min-h-[36px]"
               >
                 <Send className="h-3.5 w-3.5 mr-1" />
@@ -735,16 +781,35 @@ function TemplatesList({
               Enviar la plantilla <span className="font-medium text-foreground">{pending.name}</span> a{" "}
               <span className="font-medium text-foreground">{contactLabel}</span>.
             </div>
+
+            {needsUrl && (
+              <div className="mt-4 space-y-1.5">
+                <label className="text-sm font-medium">
+                  {pendingKind === "image" ? "URL pública de la imagen" : "URL pública del video"}
+                </label>
+                <Input
+                  type="url"
+                  inputMode="url"
+                  autoFocus
+                  value={mediaUrl}
+                  onChange={(e) => setMediaUrl(e.target.value)}
+                  placeholder={
+                    pendingKind === "image" ? "https://.../imagen.jpg" : "https://.../video.mp4"
+                  }
+                  disabled={sending}
+                />
+                <div className="text-[11px] text-muted-foreground">
+                  Usa una URL HTTPS directa, pública y estable. No uses enlaces temporales de Meta ni
+                  páginas de descarga.
+                </div>
+              </div>
+            )}
+
             <div className="mt-5 flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={sending}
-                onClick={() => setPending(null)}
-              >
+              <Button type="button" variant="outline" disabled={sending} onClick={closeForm}>
                 Cancelar
               </Button>
-              <Button type="button" onClick={send} disabled={sending}>
+              <Button type="button" onClick={send} disabled={sending || !urlOk}>
                 {sending ? "Enviando…" : "Enviar plantilla"}
               </Button>
             </div>
