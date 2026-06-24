@@ -148,6 +148,7 @@ function NotificationsPage() {
         <EmptyState
           icon={<CheckCircle2 className="h-8 w-8 text-[color:var(--success)]" />}
           title="Todo está funcionando correctamente."
+          description="Cuando tengamos algo importante que avisarte, lo verás aquí."
         />
       ) : (
         <div className="space-y-3">
@@ -156,6 +157,19 @@ function NotificationsPage() {
           ))}
         </div>
       )}
+
+      <div className="mt-8 rounded-xl border bg-white p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="text-sm font-semibold">¿Necesitas ayuda?</div>
+          <div className="text-xs text-muted-foreground">Escríbenos por WhatsApp y te ayudamos.</div>
+        </div>
+        <Button asChild className="w-full sm:w-auto min-h-[44px]">
+          <a href={SUPPORT_WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
+            <MessageCircle className="h-4 w-4 mr-2" />
+            Contactar soporte
+          </a>
+        </Button>
+      </div>
     </div>
   );
 }
