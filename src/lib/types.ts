@@ -58,13 +58,21 @@ export interface WhatsappAccount {
   connection_error_details?: string | null;
 }
 
+export interface WhatsappTemplateComponent {
+  type?: string;
+  format?: string;
+  text?: string;
+}
 export interface WhatsappTemplate {
   name: string;
   language: string;
   status: string;
   category?: string | null;
-  components?: unknown;
+  components?: WhatsappTemplateComponent[] | null;
 }
+
+export const SUPPORT_WHATSAPP_URL =
+  "https://wa.me/573112490009?text=Hola%20AgentLabs%2C%20necesito%20soporte%20con%20mi%20cuenta%20de%20Assistia.";
 
 export interface UsageCounter {
   id: string;
