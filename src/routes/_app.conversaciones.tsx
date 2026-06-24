@@ -44,7 +44,7 @@ const MSG_COLUMNS = "id,conversation_id,company_id,direction,message_type,conten
 const CONTACT_COLUMNS =
   "id,company_id,whatsapp_account_id,name,phone,city,interest,status,last_interaction_at,last_intent,memory_summary";
 
-type StatusFilter = "all" | "hot" | "interested" | "needs_human" | "new" | "closed";
+type StatusFilter = "all" | "hot" | "interested" | "new";
 
 function ConversationsPage() {
   const { companyId } = useCompany();
