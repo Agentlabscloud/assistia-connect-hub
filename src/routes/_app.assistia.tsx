@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_app/assistia")({
 });
 
 const ASSISTANT_COLUMNS =
-  "id,company_id,name,product_name,business_description,tone,fallback_message,handoff_phone,assistant_type,status";
+  "id,company_id,name,product_name,business_description,tone,fallback_message,handoff_phone,assistant_type,booking_url,status";
 
 interface GuidedFields {
   city_country: string;
@@ -156,8 +156,10 @@ function AssistantPage() {
     tone: "",
     handoff_phone: "",
     fallback_message: "",
+    booking_url: "",
   });
   const [guided, setGuided] = useState<GuidedFields>(EMPTY_GUIDED);
+  const [bookingError, setBookingError] = useState<string | null>(null);
 
   useEffect(() => {
     if (data) {
@@ -168,10 +170,23 @@ function AssistantPage() {
         tone: data.tone ?? "",
         handoff_phone: data.handoff_phone ?? "",
         fallback_message: data.fallback_message ?? "",
+        booking_url: data.booking_url ?? "",
       });
       setGuided(parseGuided(data.business_description));
     }
   }, [data]);
+
+  function validateBookingUrl(v: string): string | null {
+    const s = v.trim();
+    if (!s) return null;
+    try {
+      const u = new URL(s);
+      if (u.protocol !== "https:") return "Ingresa un enlace seguro que comience por https://";
+      return null;
+    } catch {
+      return "Ingresa un enlace seguro que comience por https://";
+    }
+  }
 
   const mut = useMutation({
     mutationFn: async () => {
@@ -181,18 +196,25 @@ function AssistantPage() {
         ...form,
         business_description,
       });
+      // Only persist booking_url when assistant_type is "agenda".
+      // For other types, do not overwrite the stored value.
+      const updates: Record<string, unknown> = {
+        name: form.name,
+        product_name: form.product_name,
+        assistant_type: form.assistant_type,
+        tone: form.tone,
+        handoff_phone: form.handoff_phone,
+        fallback_message: form.fallback_message,
+        business_description,
+        system_prompt,
+      };
+      if (form.assistant_type === "agenda") {
+        const trimmed = form.booking_url.trim();
+        updates.booking_url = trimmed.length > 0 ? trimmed : null;
+      }
       const { error } = await supabase
         .from("assistants")
-        .update({
-          name: form.name,
-          product_name: form.product_name,
-          assistant_type: form.assistant_type,
-          tone: form.tone,
-          handoff_phone: form.handoff_phone,
-          fallback_message: form.fallback_message,
-          business_description,
-          system_prompt,
-        })
+        .update(updates)
         .eq("id", data.id)
         .eq("company_id", companyId!);
       if (error) throw error;
@@ -240,6 +262,11 @@ function AssistantPage() {
       <form
         onSubmit={(e) => {
           e.preventDefault();
+          if (form.assistant_type === "agenda") {
+            const err = validateBookingUrl(form.booking_url);
+            setBookingError(err);
+            if (err) return;
+          }
           mut.mutate();
         }}
         className="space-y-6"
@@ -315,6 +342,35 @@ function AssistantPage() {
             <Textarea id="fallback_message" rows={3} value={form.fallback_message} onChange={(e) => setForm({ ...form, fallback_message: e.target.value })} />
           </Field>
         </section>
+
+        {form.assistant_type === "agenda" && (
+          <section className="bg-white rounded-xl border shadow-sm p-5 sm:p-6 space-y-3">
+            <h2 className="text-base font-semibold">Agenda</h2>
+            <Field
+              label="Enlace para agendar"
+              id="booking_url"
+              help="Pega el enlace donde tus clientes pueden reservar una cita. Puede ser Google Calendar, Calendly, Microsoft Bookings u otra plataforma."
+            >
+              <Input
+                id="booking_url"
+                type="url"
+                inputMode="url"
+                placeholder="https://calendar.google.com/… o https://calendly.com/…"
+                value={form.booking_url}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setForm({ ...form, booking_url: v });
+                  setBookingError(validateBookingUrl(v));
+                }}
+              />
+            </Field>
+            {bookingError && (
+              <div className="text-xs text-[color:var(--destructive)]">{bookingError}</div>
+            )}
+          </section>
+        )}
+
+
 
         <div className="sticky bottom-20 lg:bottom-4 bg-white/80 backdrop-blur rounded-xl border p-3 flex justify-end">
           <Button type="submit" disabled={mut.isPending} className="w-full sm:w-auto">

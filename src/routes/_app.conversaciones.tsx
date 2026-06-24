@@ -44,7 +44,7 @@ const MSG_COLUMNS = "id,conversation_id,company_id,direction,message_type,conten
 const CONTACT_COLUMNS =
   "id,company_id,whatsapp_account_id,name,phone,city,interest,status,last_interaction_at,last_intent,memory_summary";
 
-type StatusFilter = "all" | "hot" | "interested" | "needs_human" | "new" | "closed";
+type StatusFilter = "all" | "hot" | "interested" | "new";
 
 function ConversationsPage() {
   const { companyId } = useCompany();
@@ -181,14 +181,12 @@ function ConversationsPage() {
           />
         </div>
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-          <SelectTrigger className="min-h-[44px]"><SelectValue placeholder="Calificación" /></SelectTrigger>
+          <SelectTrigger className="min-h-[44px]"><SelectValue placeholder="Estado" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="hot">Leads calientes</SelectItem>
             <SelectItem value="interested">Interesados</SelectItem>
-            <SelectItem value="needs_human">Requieren asesor</SelectItem>
             <SelectItem value="new">Nuevos</SelectItem>
-            <SelectItem value="closed">Cerrados</SelectItem>
           </SelectContent>
         </Select>
         {intentOptions.length > 0 ? (
@@ -515,27 +513,18 @@ function ReplyComposer({
                   No hay plantillas aprobadas disponibles en esta cuenta de WhatsApp. Crea o aprueba una plantilla desde Meta Business Manager para poder contactar clientes fuera de la ventana de 24 horas.
                 </span>
               ) : (
-                <div className="space-y-2">
-                  <div className="text-xs text-muted-foreground">
-                    Plantillas aprobadas disponibles:
-                  </div>
-                  <ul className="divide-y rounded-md border bg-white">
-                    {templates.map((t) => (
-                      <li key={`${t.name}-${t.language}`} className="px-3 py-2 flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <div className="font-medium text-sm truncate">{t.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {t.language}{t.category ? ` · ${t.category}` : ""}
-                          </div>
-                        </div>
-                        <span className="text-[11px] rounded-full bg-muted px-2 py-0.5">Aprobada</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="text-xs text-muted-foreground">
-                    El envío de plantillas estará disponible próximamente desde la plataforma.
-                  </div>
-                </div>
+                <TemplatesList
+                  templates={templates}
+                  conversation={conversation}
+                  contact={contact}
+                  onSent={() => {
+                    setShowTemplates(false);
+                    setFeedback({ tone: "ok", message: "Plantilla enviada correctamente." });
+                    qc.invalidateQueries({ queryKey: ["messages", companyId, conversation.id] });
+                    qc.invalidateQueries({ queryKey: ["conversations", companyId] });
+                  }}
+                  onError={(m: string) => setFeedback({ tone: "err", message: m })}
+                />
               )}
             </div>
           )}
@@ -635,5 +624,133 @@ function Chip({
       <span className="text-muted-foreground">{label}:</span>
       {valueNode ?? <span className="font-medium">{value}</span>}
     </span>
+  );
+}
+
+function templateRequiresImage(t: WhatsappTemplate): boolean {
+  const comps = Array.isArray(t.components) ? t.components : [];
+  return comps.some(
+    (c) =>
+      (c?.type || "").toUpperCase() === "HEADER" &&
+      (c?.format || "").toUpperCase() === "IMAGE",
+  );
+}
+
+function TemplatesList({
+  templates,
+  conversation,
+  contact,
+  onSent,
+  onError,
+}: {
+  templates: WhatsappTemplate[];
+  conversation: Conversation;
+  contact: Contact | null;
+  onSent: () => void;
+  onError: (msg: string) => void;
+}) {
+  const { companyId } = useCompany();
+  const [pending, setPending] = useState<WhatsappTemplate | null>(null);
+  const [sending, setSending] = useState(false);
+
+  const contactLabel =
+    contact?.name || conversation.customer_name || contact?.phone || conversation.customer_phone || "este contacto";
+
+  const send = async () => {
+    if (!pending || !companyId || !contact?.id) return;
+    setSending(true);
+    try {
+      const res = await fetch(N8N_MANUAL_REPLY_WEBHOOK, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          company_id: companyId,
+          contact_id: contact.id,
+          conversation_id: conversation.id,
+          message: "",
+          template_name: pending.name,
+          template_language: pending.language,
+        }),
+      });
+      const data: { success?: boolean; sent?: boolean; message?: string } = await res
+        .json()
+        .catch(() => ({}));
+      if (data.success && data.sent !== false) {
+        setPending(null);
+        onSent();
+      } else {
+        onError(data.message || "No fue posible enviar la plantilla.");
+      }
+    } catch {
+      onError("No fue posible enviar la plantilla. Revisa tu conexión.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="text-xs text-muted-foreground">Plantillas aprobadas disponibles:</div>
+      <ul className="divide-y rounded-md border bg-white">
+        {templates.map((t) => {
+          const needsImage = templateRequiresImage(t);
+          return (
+            <li
+              key={`${t.name}-${t.language}`}
+              className="px-3 py-2 flex items-center justify-between gap-2"
+            >
+              <div className="min-w-0">
+                <div className="font-medium text-sm truncate">{t.name}</div>
+                <div className="text-xs text-muted-foreground">
+                  {t.language}
+                  {t.category ? ` · ${t.category}` : ""}
+                </div>
+                {needsImage && (
+                  <div className="text-[11px] mt-0.5 text-[color:var(--warning-foreground)]">
+                    Requiere imagen configurada
+                  </div>
+                )}
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant={needsImage ? "outline" : "default"}
+                disabled={needsImage}
+                onClick={() => setPending(t)}
+                className="min-h-[36px]"
+              >
+                <Send className="h-3.5 w-3.5 mr-1" />
+                Enviar
+              </Button>
+            </li>
+          );
+        })}
+      </ul>
+
+      {pending && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-5">
+            <div className="text-base font-semibold">Confirmar envío</div>
+            <div className="text-sm text-muted-foreground mt-2">
+              Enviar la plantilla <span className="font-medium text-foreground">{pending.name}</span> a{" "}
+              <span className="font-medium text-foreground">{contactLabel}</span>.
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={sending}
+                onClick={() => setPending(null)}
+              >
+                Cancelar
+              </Button>
+              <Button type="button" onClick={send} disabled={sending}>
+                {sending ? "Enviando…" : "Enviar plantilla"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

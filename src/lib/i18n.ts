@@ -183,3 +183,86 @@ export function formatPeriodMonth(period?: string | null): string {
     return p;
   }
 }
+
+// Dynamic status labels per assistant_type. Internal values stay new/interested/hot.
+type StatusKey = "new" | "interested" | "hot";
+const STATUS_LABELS: Record<string, Record<StatusKey, string>> = {
+  ventas:  { new: "Nuevos",            interested: "Interesados",             hot: "Leads calientes" },
+  agenda:  { new: "Nuevas solicitudes", interested: "En coordinación",        hot: "Por agendar" },
+  soporte: { new: "Nuevos casos",       interested: "En seguimiento",         hot: "Prioritarios" },
+  default: { new: "Nuevos",            interested: "En seguimiento",          hot: "Prioritarios" },
+};
+const STATUS_COL_HEADER: Record<string, string> = {
+  ventas: "Estado comercial",
+  agenda: "Estado de agenda",
+  soporte: "Estado del caso",
+  default: "Estado",
+};
+const EMPTY_BY_TYPE: Record<string, Record<StatusKey | "all", string>> = {
+  ventas:  {
+    new: "No hay clientes nuevos con este filtro.",
+    interested: "No hay clientes interesados con este filtro.",
+    hot: "No hay leads calientes con este filtro.",
+    all: "Aún no hay clientes para mostrar.",
+  },
+  agenda:  {
+    new: "No hay nuevas solicitudes con este filtro.",
+    interested: "No hay solicitudes en coordinación con este filtro.",
+    hot: "No hay solicitudes pendientes por agendar con este filtro.",
+    all: "Aún no hay clientes para mostrar.",
+  },
+  soporte: {
+    new: "No hay casos nuevos con este filtro.",
+    interested: "No hay casos en seguimiento con este filtro.",
+    hot: "No hay casos prioritarios con este filtro.",
+    all: "Aún no hay clientes para mostrar.",
+  },
+  default: {
+    new: "No hay clientes nuevos con este filtro.",
+    interested: "No hay clientes en seguimiento con este filtro.",
+    hot: "No hay clientes prioritarios con este filtro.",
+    all: "Aún no hay clientes para mostrar.",
+  },
+};
+
+function bucket(t?: string | null) {
+  const k = (t || "").toLowerCase();
+  return k === "ventas" || k === "agenda" || k === "soporte" ? k : "default";
+}
+
+export function statusLabelByType(status: string, assistantType?: string | null): string {
+  const k = status.toLowerCase() as StatusKey;
+  const map = STATUS_LABELS[bucket(assistantType)];
+  return map[k] ?? status;
+}
+export function statusColumnHeader(assistantType?: string | null) {
+  return STATUS_COL_HEADER[bucket(assistantType)];
+}
+export function emptyStateText(
+  assistantType: string | null | undefined,
+  filter: "all" | StatusKey,
+): string {
+  return EMPTY_BY_TYPE[bucket(assistantType)][filter];
+}
+
+// Build a list of ISO date keys for the last N days (inclusive, local TZ)
+export function lastNDays(n: number): { key: string; label: string }[] {
+  const out: { key: string; label: string }[] = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const label = new Intl.DateTimeFormat("es", { day: "numeric", month: "short" }).format(d);
+    out.push({ key, label });
+  }
+  return out;
+}
+
+export function dayKey(iso?: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
