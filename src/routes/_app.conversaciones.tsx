@@ -513,27 +513,18 @@ function ReplyComposer({
                   No hay plantillas aprobadas disponibles en esta cuenta de WhatsApp. Crea o aprueba una plantilla desde Meta Business Manager para poder contactar clientes fuera de la ventana de 24 horas.
                 </span>
               ) : (
-                <div className="space-y-2">
-                  <div className="text-xs text-muted-foreground">
-                    Plantillas aprobadas disponibles:
-                  </div>
-                  <ul className="divide-y rounded-md border bg-white">
-                    {templates.map((t) => (
-                      <li key={`${t.name}-${t.language}`} className="px-3 py-2 flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <div className="font-medium text-sm truncate">{t.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {t.language}{t.category ? ` · ${t.category}` : ""}
-                          </div>
-                        </div>
-                        <span className="text-[11px] rounded-full bg-muted px-2 py-0.5">Aprobada</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="text-xs text-muted-foreground">
-                    El envío de plantillas estará disponible próximamente desde la plataforma.
-                  </div>
-                </div>
+                <TemplatesList
+                  templates={templates}
+                  conversation={conversation}
+                  contact={contact}
+                  onSent={() => {
+                    setShowTemplates(false);
+                    setFeedback({ tone: "ok", message: "Plantilla enviada correctamente." });
+                    qc.invalidateQueries({ queryKey: ["messages", companyId, conversation.id] });
+                    qc.invalidateQueries({ queryKey: ["conversations", companyId] });
+                  }}
+                  onError={(m) => setFeedback({ tone: "err", message: m })}
+                />
               )}
             </div>
           )}
