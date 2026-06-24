@@ -338,6 +338,35 @@ function AssistantPage() {
           </Field>
         </section>
 
+        {form.assistant_type === "agenda" && (
+          <section className="bg-white rounded-xl border shadow-sm p-5 sm:p-6 space-y-3">
+            <h2 className="text-base font-semibold">Agenda</h2>
+            <Field
+              label="Enlace para agendar"
+              id="booking_url"
+              help="Pega el enlace donde tus clientes pueden reservar una cita. Puede ser Google Calendar, Calendly, Microsoft Bookings u otra plataforma."
+            >
+              <Input
+                id="booking_url"
+                type="url"
+                inputMode="url"
+                placeholder="https://calendar.google.com/… o https://calendly.com/…"
+                value={form.booking_url}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setForm({ ...form, booking_url: v });
+                  setBookingError(validateBookingUrl(v));
+                }}
+              />
+            </Field>
+            {bookingError && (
+              <div className="text-xs text-[color:var(--destructive)]">{bookingError}</div>
+            )}
+          </section>
+        )}
+
+
+
         <div className="sticky bottom-20 lg:bottom-4 bg-white/80 backdrop-blur rounded-xl border p-3 flex justify-end">
           <Button type="submit" disabled={mut.isPending} className="w-full sm:w-auto">
             {mut.isPending ? "Guardando…" : "Guardar cambios"}
