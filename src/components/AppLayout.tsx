@@ -21,6 +21,7 @@ import { useCompany } from "@/lib/company-context";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { WhatsAppConnectionBanner } from "@/components/WhatsAppConnectionBanner";
+import { NotificationsBell } from "@/components/NotificationsBell";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
