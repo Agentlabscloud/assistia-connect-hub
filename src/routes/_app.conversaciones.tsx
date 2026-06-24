@@ -523,7 +523,7 @@ function ReplyComposer({
                     qc.invalidateQueries({ queryKey: ["messages", companyId, conversation.id] });
                     qc.invalidateQueries({ queryKey: ["conversations", companyId] });
                   }}
-                  onError={(m) => setFeedback({ tone: "err", message: m })}
+                  onError={(m: string) => setFeedback({ tone: "err", message: m })}
                 />
               )}
             </div>
