@@ -33,6 +33,7 @@ export interface Assistant {
   fallback_message: string | null;
   handoff_phone: string | null;
   assistant_type?: AssistantType | null;
+  booking_url?: string | null;
   optimization_ends_at?: string | null;
   status?: string | null;
 }
