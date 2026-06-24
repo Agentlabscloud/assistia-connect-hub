@@ -181,14 +181,12 @@ function ConversationsPage() {
           />
         </div>
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-          <SelectTrigger className="min-h-[44px]"><SelectValue placeholder="Calificación" /></SelectTrigger>
+          <SelectTrigger className="min-h-[44px]"><SelectValue placeholder="Estado" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="hot">Leads calientes</SelectItem>
             <SelectItem value="interested">Interesados</SelectItem>
-            <SelectItem value="needs_human">Requieren asesor</SelectItem>
             <SelectItem value="new">Nuevos</SelectItem>
-            <SelectItem value="closed">Cerrados</SelectItem>
           </SelectContent>
         </Select>
         {intentOptions.length > 0 ? (
