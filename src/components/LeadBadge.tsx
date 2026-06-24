@@ -1,7 +1,7 @@
 import { StatusBadge } from "@/components/ui-bits";
 import { tLeadStatus } from "@/lib/i18n";
 
-export function LeadBadge({ lead }: { lead: string }) {
+export function LeadBadge({ lead, label }: { lead: string; label?: string }) {
   const l = lead.toLowerCase();
   const tone =
     l === "hot"
@@ -13,5 +13,5 @@ export function LeadBadge({ lead }: { lead: string }) {
       : l === "closed"
       ? "draft"
       : "pending";
-  return <StatusBadge status={tone}>{tLeadStatus(lead)}</StatusBadge>;
+  return <StatusBadge status={tone}>{label ?? tLeadStatus(lead)}</StatusBadge>;
 }
