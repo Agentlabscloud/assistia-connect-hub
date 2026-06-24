@@ -4,9 +4,9 @@ import { supabase } from "@/lib/supabase";
 import { useCompany } from "@/lib/company-context";
 import { PageHeader, LoadingState, EmptyState } from "@/components/ui-bits";
 import { Button } from "@/components/ui/button";
-import { SUPPORT_EMAIL, DEFAULT_MESSAGE_LIMIT } from "@/lib/types";
+import { SUPPORT_EMAIL, SUPPORT_WHATSAPP_URL, DEFAULT_MESSAGE_LIMIT } from "@/lib/types";
 import type { Assistant, UsageCounter, WhatsappAccount, Subscription } from "@/lib/types";
-import { AlertTriangle, Bell, CheckCircle2, Info } from "lucide-react";
+import { AlertTriangle, Bell, CheckCircle2, Info, MessageCircle } from "lucide-react";
 
 export const Route = createFileRoute("/_app/notificaciones")({
   component: NotificationsPage,
