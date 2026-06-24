@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_app/assistia")({
 });
 
 const ASSISTANT_COLUMNS =
-  "id,company_id,name,product_name,business_description,tone,fallback_message,handoff_phone,assistant_type,status";
+  "id,company_id,name,product_name,business_description,tone,fallback_message,handoff_phone,assistant_type,booking_url,status";
 
 interface GuidedFields {
   city_country: string;
