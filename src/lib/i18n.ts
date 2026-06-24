@@ -172,13 +172,16 @@ export function currentPeriodMonth(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-// "junio de 2026"
+// "Junio de 2026"
 export function formatPeriodMonth(period?: string | null): string {
   const p = period || currentPeriodMonth();
   const [y, m] = p.split("-").map(Number);
   if (!y || !m) return p;
   try {
-    return new Intl.DateTimeFormat("es", { month: "long", year: "numeric" }).format(new Date(y, m - 1, 1));
+    const label = new Intl.DateTimeFormat("es", { month: "long", year: "numeric" }).format(
+      new Date(y, m - 1, 1),
+    );
+    return label.charAt(0).toLocaleUpperCase("es") + label.slice(1);
   } catch {
     return p;
   }
