@@ -196,18 +196,25 @@ function AssistantPage() {
         ...form,
         business_description,
       });
+      // Only persist booking_url when assistant_type is "agenda".
+      // For other types, do not overwrite the stored value.
+      const updates: Record<string, unknown> = {
+        name: form.name,
+        product_name: form.product_name,
+        assistant_type: form.assistant_type,
+        tone: form.tone,
+        handoff_phone: form.handoff_phone,
+        fallback_message: form.fallback_message,
+        business_description,
+        system_prompt,
+      };
+      if (form.assistant_type === "agenda") {
+        const trimmed = form.booking_url.trim();
+        updates.booking_url = trimmed.length > 0 ? trimmed : null;
+      }
       const { error } = await supabase
         .from("assistants")
-        .update({
-          name: form.name,
-          product_name: form.product_name,
-          assistant_type: form.assistant_type,
-          tone: form.tone,
-          handoff_phone: form.handoff_phone,
-          fallback_message: form.fallback_message,
-          business_description,
-          system_prompt,
-        })
+        .update(updates)
         .eq("id", data.id)
         .eq("company_id", companyId!);
       if (error) throw error;
