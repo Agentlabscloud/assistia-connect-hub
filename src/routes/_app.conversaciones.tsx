@@ -823,29 +823,56 @@ function TemplatesList({
 
   const busy = uploading || sending;
 
+  const isKommo = (contact?.source || "").toLowerCase() === "kommo";
+
+  const headerLabel = (k: TemplateMediaKind) =>
+    k === "image" ? "Encabezado: imagen"
+      : k === "video" ? "Encabezado: video"
+      : k === "unsupported" ? "Encabezado: no compatible"
+      : "Solo texto";
+
+  const bodyPreview = (t: WhatsappTemplate): string => {
+    const comps = Array.isArray(t.components) ? t.components : [];
+    const body = comps.find((c) => (c?.type || "").toUpperCase() === "BODY");
+    const text = (body?.text || "").trim();
+    if (!text) return "";
+    return text.length > 140 ? `${text.slice(0, 140)}…` : text;
+  };
+
   return (
     <div className="space-y-2">
+      {isKommo && (
+        <div className="rounded-md border border-[color:var(--warning)]/40 bg-[color:var(--warning)]/10 px-3 py-2 text-xs space-y-1">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-white/70 border px-2 py-0.5 font-medium">
+            Importado desde Kommo
+          </div>
+          <div className="text-[color:var(--warning-foreground)]">
+            Verifica que este contacto autorizó recibir información por WhatsApp antes de enviar una plantilla.
+          </div>
+        </div>
+      )}
       <div className="text-xs text-muted-foreground">Plantillas aprobadas disponibles:</div>
       <ul className="divide-y rounded-md border bg-white">
         {templates.map((t) => {
           const kind = templateHeaderKind(t);
           const unsupported = kind === "unsupported";
+          const preview = bodyPreview(t);
           return (
             <li
               key={`${t.name}-${t.language}`}
-              className="px-3 py-2 flex items-center justify-between gap-2"
+              className="px-3 py-2 flex items-start justify-between gap-2"
             >
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="font-medium text-sm truncate">{t.name}</div>
                 <div className="text-xs text-muted-foreground">
                   {t.language}
                   {t.category ? ` · ${t.category}` : ""}
+                  {` · ${headerLabel(kind)}`}
                 </div>
-                {kind === "image" && (
-                  <div className="text-[11px] mt-0.5 text-muted-foreground">Incluye imagen</div>
-                )}
-                {kind === "video" && (
-                  <div className="text-[11px] mt-0.5 text-muted-foreground">Incluye video</div>
+                {preview && (
+                  <div className="text-[12px] mt-1 text-foreground/80 line-clamp-2 break-words">
+                    {preview}
+                  </div>
                 )}
                 {unsupported && (
                   <div className="text-[11px] mt-0.5 text-[color:var(--warning-foreground)]">
@@ -859,7 +886,7 @@ function TemplatesList({
                 variant={unsupported ? "outline" : "default"}
                 disabled={unsupported}
                 onClick={() => openPending(t)}
-                className="min-h-[36px]"
+                className="min-h-[36px] shrink-0"
               >
                 <Send className="h-3.5 w-3.5 mr-1" />
                 Enviar
@@ -868,6 +895,7 @@ function TemplatesList({
           );
         })}
       </ul>
+
 
       {pending && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
