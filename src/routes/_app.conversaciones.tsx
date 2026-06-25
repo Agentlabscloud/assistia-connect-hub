@@ -640,16 +640,27 @@ function templateHeaderKind(t: WhatsappTemplate): TemplateMediaKind {
   return "unsupported";
 }
 
-function isValidHttpsUrl(v: string): boolean {
-  const s = (v || "").trim();
-  if (!s || /\s/.test(s)) return false;
-  if (!s.startsWith("https://")) return false;
-  try {
-    const u = new URL(s);
-    return u.protocol === "https:";
-  } catch {
-    return false;
-  }
+const STORAGE_BUCKET = "whatsapp-template-media";
+const VIDEO_MAX_BYTES = 16 * 1024 * 1024;
+const IMAGE_ACCEPT = "image/jpeg,image/png";
+const VIDEO_ACCEPT = "video/mp4";
+
+function sanitizeFileName(name: string): string {
+  const dot = name.lastIndexOf(".");
+  const base = (dot > 0 ? name.slice(0, dot) : name)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60) || "file";
+  const ext = (dot > 0 ? name.slice(dot + 1) : "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 8);
+  return ext ? `${base}.${ext}` : base;
+}
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(2)} MB`;
 }
 
 function TemplatesList({
@@ -668,32 +679,113 @@ function TemplatesList({
   const { companyId } = useCompany();
   const [pending, setPending] = useState<WhatsappTemplate | null>(null);
   const [pendingKind, setPendingKind] = useState<TemplateMediaKind>("none");
-  const [mediaUrl, setMediaUrl] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [fileError, setFileError] = useState<string>("");
+  const [uploading, setUploading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const contactLabel =
     contact?.name || conversation.customer_name || contact?.phone || conversation.customer_phone || "este contacto";
 
+  useEffect(() => {
+    if (!file) {
+      setPreviewUrl("");
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
   const closeForm = () => {
     setPending(null);
     setPendingKind("none");
-    setMediaUrl("");
+    setFile(null);
+    setFileError("");
+    setConfirmed(false);
+    setUploading(false);
+    setSending(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const openPending = (t: WhatsappTemplate) => {
     setPending(t);
     setPendingKind(templateHeaderKind(t));
-    setMediaUrl("");
+    setFile(null);
+    setFileError("");
+    setConfirmed(false);
   };
 
-  const needsUrl = pendingKind === "image" || pendingKind === "video";
-  const urlOk = !needsUrl || isValidHttpsUrl(mediaUrl);
+  const needsMedia = pendingKind === "image" || pendingKind === "video";
+
+  const onFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFileError("");
+    const f = e.target.files?.[0] ?? null;
+    if (!f) {
+      setFile(null);
+      return;
+    }
+    if (pendingKind === "image") {
+      if (f.type !== "image/jpeg" && f.type !== "image/png") {
+        setFile(null);
+        setFileError("Formato no permitido. Usa JPG o PNG.");
+        return;
+      }
+    } else if (pendingKind === "video") {
+      if (f.type !== "video/mp4") {
+        setFile(null);
+        setFileError("Formato no permitido. Usa MP4.");
+        return;
+      }
+      if (f.size > VIDEO_MAX_BYTES) {
+        setFile(null);
+        setFileError("El video debe pesar máximo 16 MB para enviarse por WhatsApp.");
+        return;
+      }
+    }
+    setFile(f);
+  };
+
+  const clearFile = () => {
+    setFile(null);
+    setFileError("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const canSend = !!pending && !!companyId && !!contact?.id && confirmed && !uploading && !sending && (!needsMedia || !!file);
 
   const send = async () => {
     if (!pending || !companyId || !contact?.id) return;
-    if (needsUrl && !isValidHttpsUrl(mediaUrl)) return;
-    setSending(true);
+    if (!confirmed) return;
+    if (needsMedia && !file) return;
+    setUploading(needsMedia);
     try {
+      let mediaUrl = "";
+      if (needsMedia && file) {
+        const safeName = sanitizeFileName(file.name);
+        const unique = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const path = `${companyId}/${unique}-${safeName}`;
+        const { error: upErr } = await supabase.storage
+          .from(STORAGE_BUCKET)
+          .upload(path, file, { upsert: false, contentType: file.type });
+        if (upErr) {
+          onError(upErr.message || "No fue posible subir el archivo.");
+          setUploading(false);
+          return;
+        }
+        const { data: pub } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+        mediaUrl = pub?.publicUrl || "";
+        if (!mediaUrl) {
+          onError("No fue posible obtener la URL pública del archivo.");
+          setUploading(false);
+          return;
+        }
+      }
+      setUploading(false);
+      setSending(true);
       const body: Record<string, unknown> = {
         company_id: companyId,
         contact_id: contact.id,
@@ -702,9 +794,9 @@ function TemplatesList({
         template_name: pending.name,
         template_language: pending.language,
       };
-      if (needsUrl) {
+      if (needsMedia) {
         body.template_header_media_type = pendingKind;
-        body.template_header_media_url = mediaUrl.trim();
+        body.template_header_media_url = mediaUrl;
       }
       const res = await fetch(N8N_MANUAL_REPLY_WEBHOOK, {
         method: "POST",
@@ -720,12 +812,16 @@ function TemplatesList({
       } else {
         onError(data.message || "No fue posible enviar la plantilla.");
       }
-    } catch {
-      onError("No fue posible enviar la plantilla. Revisa tu conexión.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "No fue posible enviar la plantilla. Revisa tu conexión.";
+      onError(msg);
     } finally {
+      setUploading(false);
       setSending(false);
     }
   };
+
+  const busy = uploading || sending;
 
   return (
     <div className="space-y-2">
@@ -775,42 +871,101 @@ function TemplatesList({
 
       {pending && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-5">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-5 max-h-[90vh] overflow-y-auto">
             <div className="text-base font-semibold">Confirmar envío</div>
             <div className="text-sm text-muted-foreground mt-2">
               Enviar la plantilla <span className="font-medium text-foreground">{pending.name}</span> a{" "}
               <span className="font-medium text-foreground">{contactLabel}</span>.
             </div>
 
-            {needsUrl && (
-              <div className="mt-4 space-y-1.5">
+            {needsMedia && (
+              <div className="mt-4 space-y-2">
                 <label className="text-sm font-medium">
-                  {pendingKind === "image" ? "URL pública de la imagen" : "URL pública del video"}
+                  {pendingKind === "image" ? "Imagen para la plantilla" : "Video para la plantilla"}
                 </label>
-                <Input
-                  type="url"
-                  inputMode="url"
-                  autoFocus
-                  value={mediaUrl}
-                  onChange={(e) => setMediaUrl(e.target.value)}
-                  placeholder={
-                    pendingKind === "image" ? "https://.../imagen.jpg" : "https://.../video.mp4"
-                  }
-                  disabled={sending}
-                />
-                <div className="text-[11px] text-muted-foreground">
-                  Usa una URL HTTPS directa, pública y estable. No uses enlaces temporales de Meta ni
-                  páginas de descarga.
-                </div>
+
+                {!file && (
+                  <>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept={pendingKind === "image" ? IMAGE_ACCEPT : VIDEO_ACCEPT}
+                      onChange={onFilePick}
+                      disabled={busy}
+                      className="hidden"
+                      id="tpl-media-file"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={busy}
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full"
+                    >
+                      {pendingKind === "image" ? "Subir imagen" : "Subir video"}
+                    </Button>
+                    <div className="text-[11px] text-muted-foreground">
+                      {pendingKind === "image"
+                        ? "Formatos permitidos: JPG o PNG."
+                        : "Formato permitido: MP4. Tamaño máximo: 16 MB."}
+                    </div>
+                  </>
+                )}
+
+                {file && (
+                  <div className="rounded-md border bg-white p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium truncate">{file.name}</div>
+                        <div className="text-[11px] text-muted-foreground">{formatBytes(file.size)}</div>
+                      </div>
+                      <Button type="button" size="sm" variant="outline" onClick={clearFile} disabled={busy}>
+                        Quitar
+                      </Button>
+                    </div>
+                    {previewUrl && pendingKind === "image" && (
+                      <img
+                        src={previewUrl}
+                        alt="Vista previa"
+                        className="max-h-48 w-full object-contain rounded border bg-muted"
+                      />
+                    )}
+                    {previewUrl && pendingKind === "video" && (
+                      <video
+                        src={previewUrl}
+                        controls
+                        className="max-h-48 w-full rounded border bg-black"
+                      />
+                    )}
+                  </div>
+                )}
+
+                {fileError && (
+                  <div className="text-xs text-[color:var(--destructive)]">{fileError}</div>
+                )}
               </div>
             )}
 
+            <label className="mt-4 flex items-start gap-2 text-xs text-muted-foreground cursor-pointer">
+              <input
+                type="checkbox"
+                checked={confirmed}
+                onChange={(e) => setConfirmed(e.target.checked)}
+                disabled={busy}
+                className="mt-0.5"
+              />
+              <span>
+                Confirmo que este contacto autorizó recibir información por WhatsApp y que deseo enviar
+                esta plantilla.
+              </span>
+            </label>
+
             <div className="mt-5 flex justify-end gap-2">
-              <Button type="button" variant="outline" disabled={sending} onClick={closeForm}>
+              <Button type="button" variant="outline" disabled={busy} onClick={closeForm}>
                 Cancelar
               </Button>
-              <Button type="button" onClick={send} disabled={sending || !urlOk}>
-                {sending ? "Enviando…" : "Enviar plantilla"}
+              <Button type="button" onClick={send} disabled={!canSend}>
+                {uploading ? "Subiendo…" : sending ? "Enviando…" : "Enviar plantilla"}
               </Button>
             </div>
           </div>
